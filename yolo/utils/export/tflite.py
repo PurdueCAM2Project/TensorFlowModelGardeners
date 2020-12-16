@@ -42,6 +42,7 @@ with tf.device("gpu:0"):
   model = task.build_model()
   task.initialize(model)
   model(tf.ones((1, 416, 416, 3), dtype = tf.float32), training = False)
+  model(tf.keras.Input((416, 416, 3)))
 
   image = url_to_image("https://raw.githubusercontent.com/zhreshold/mxnet-ssd/master/data/demo/dog.jpg")
   image = cv2.resize(image, (416, 416))

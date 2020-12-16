@@ -79,6 +79,9 @@ def pad_max_instances(value, instances, pad_value=0, pad_axis = 0):
     nshape = tf.concat([shape[:pad_axis], pad, shape[(pad_axis + 1):]], axis = 0)
     pad_tensor = tf.fill(nshape, tf.cast(pad_value, dtype = value.dtype))
     value = tf.concat([value, pad_tensor], axis=pad_axis)
+    shape = list(value.shape)
+    shape[1] = instances
+    value.set_shape(shape)
     return value
 
 
