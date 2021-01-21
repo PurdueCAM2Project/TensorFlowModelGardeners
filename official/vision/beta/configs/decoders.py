@@ -36,21 +36,12 @@ class FPN(hyperparams.Config):
 
 
 @dataclasses.dataclass
-class NASFPN(hyperparams.Config):
-  """NASFPN config."""
-  num_filters: int = 256
-  num_repeats: int = 5
-  use_separable_conv: bool = False
-
-
-@dataclasses.dataclass
 class ASPP(hyperparams.Config):
   """ASPP config."""
   level: int = 4
   dilation_rates: List[int] = dataclasses.field(default_factory=list)
   dropout_rate: float = 0.0
   num_filters: int = 256
-  pool_kernel_size: Optional[List[int]] = None  # Use global average pooling.
 
 
 @dataclasses.dataclass
@@ -63,6 +54,5 @@ class Decoder(hyperparams.OneOfConfig):
   """
   type: Optional[str] = None
   fpn: FPN = FPN()
-  nasfpn: NASFPN = NASFPN()
   identity: Identity = Identity()
   aspp: ASPP = ASPP()

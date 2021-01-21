@@ -14,6 +14,10 @@
 # ==============================================================================
 """Helper functions for the Keras implementations of models."""
 
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
 import multiprocessing
 import os
 import time

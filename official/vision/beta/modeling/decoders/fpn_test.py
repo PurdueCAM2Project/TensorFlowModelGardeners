@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Tests for FPN."""
+"""Tests for resnet."""
 
 # Import libraries
 from absl.testing import parameterized

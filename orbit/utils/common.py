@@ -1,4 +1,4 @@
-# Copyright 2021 The Orbit Authors. All Rights Reserved.
+# Copyright 2020 The Orbit Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+# ==============================================================================
 """Some layered modules/functions to help users writing custom training loop."""
 
 import inspect
@@ -82,7 +82,7 @@ def make_distributed_dataset(strategy, dataset_or_fn, *args, **kwargs):
       kwargs["input_context"] = input_context
     return dataset_or_fn(*args, **kwargs)
 
-  return strategy.distribute_datasets_from_function(dataset_fn)
+  return strategy.experimental_distribute_datasets_from_function(dataset_fn)
 
 
 def get_value(x):

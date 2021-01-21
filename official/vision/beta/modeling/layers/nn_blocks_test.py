@@ -30,7 +30,7 @@ def distribution_strategy_combinations() -> Iterable[Tuple[Any, ...]]:
   return combinations.combine(
       distribution=[
           strategy_combinations.default_strategy,
-          strategy_combinations.cloud_tpu_strategy,
+          strategy_combinations.tpu_strategy,
           strategy_combinations.one_device_strategy_gpu,
       ],
   )
@@ -39,11 +39,11 @@ def distribution_strategy_combinations() -> Iterable[Tuple[Any, ...]]:
 class NNBlocksTest(parameterized.TestCase, tf.test.TestCase):
 
   @parameterized.parameters(
-      (nn_blocks.ResidualBlock, 1, False, 0.0, None),
-      (nn_blocks.ResidualBlock, 2, True, 0.2, 0.25),
+      (nn_blocks.ResidualBlock, 1, False, 0.0),
+      (nn_blocks.ResidualBlock, 2, True, 0.2),
   )
-  def test_residual_block_creation(self, block_fn, strides, use_projection,
-                                   stochastic_depth_drop_rate, se_ratio):
+  def test_residual_block_creation(
+      self, block_fn, strides, use_projection, stochastic_depth_drop_rate):
     input_size = 128
     filter_size = 256
     inputs = tf.keras.Input(
@@ -52,7 +52,6 @@ class NNBlocksTest(parameterized.TestCase, tf.test.TestCase):
         filter_size,
         strides,
         use_projection=use_projection,
-        se_ratio=se_ratio,
         stochastic_depth_drop_rate=stochastic_depth_drop_rate,
     )
 
@@ -63,11 +62,11 @@ class NNBlocksTest(parameterized.TestCase, tf.test.TestCase):
         features.shape.as_list())
 
   @parameterized.parameters(
-      (nn_blocks.BottleneckBlock, 1, False, 0.0, None),
-      (nn_blocks.BottleneckBlock, 2, True, 0.2, 0.25),
+      (nn_blocks.BottleneckBlock, 1, False, 0.0),
+      (nn_blocks.BottleneckBlock, 2, True, 0.2),
   )
-  def test_bottleneck_block_creation(self, block_fn, strides, use_projection,
-                                     stochastic_depth_drop_rate, se_ratio):
+  def test_bottleneck_block_creation(
+      self, block_fn, strides, use_projection, stochastic_depth_drop_rate):
     input_size = 128
     filter_size = 256
     inputs = tf.keras.Input(
@@ -76,8 +75,8 @@ class NNBlocksTest(parameterized.TestCase, tf.test.TestCase):
         filter_size,
         strides,
         use_projection=use_projection,
-        se_ratio=se_ratio,
-        stochastic_depth_drop_rate=stochastic_depth_drop_rate)
+        stochastic_depth_drop_rate=stochastic_depth_drop_rate
+    )
 
     features = block(inputs)
 

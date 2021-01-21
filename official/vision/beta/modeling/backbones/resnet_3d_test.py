@@ -65,7 +65,6 @@ class ResNet3DTest(parameterized.TestCase, tf.test.TestCase):
         temporal_strides=[1, 1, 1, 1],
         temporal_kernel_sizes=[(3, 3, 3), (3, 1, 3, 1), (3, 1, 3, 1, 3, 1),
                                (1, 3, 1)],
-        stem_conv_temporal_kernel_size=5,
         stem_conv_temporal_stride=2,
         stem_pool_temporal_stride=2,
         use_self_gating=None,

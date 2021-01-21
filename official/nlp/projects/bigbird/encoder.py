@@ -30,7 +30,7 @@ class BigBirdEncoder(tf.keras.Model):
   *Note* that the network is constructed by
   [Keras Functional API](https://keras.io/guides/functional_api/).
 
-  Args:
+  Arguments:
     vocab_size: The size of the token vocabulary.
     hidden_size: The size of the transformer hidden layers.
     num_layers: The number of transformer layers.
@@ -142,8 +142,7 @@ class BigBirdEncoder(tf.keras.Model):
 
     self._transformer_layers = []
     data = embeddings
-    masks = attention.BigBirdMasks(block_size=block_size)(
-        tf.cast(mask, embeddings.dtype))
+    masks = attention.BigBirdMasks(block_size=block_size)(mask)
     encoder_outputs = []
     attn_head_dim = hidden_size // num_attention_heads
     for i in range(num_layers):

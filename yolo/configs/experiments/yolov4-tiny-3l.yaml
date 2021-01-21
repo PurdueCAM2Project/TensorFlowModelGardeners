@@ -61,7 +61,7 @@ task:
   annotation_file: null
   gradient_clip_norm: 0.0
   load_darknet_weights: true
-  darknet_load_decoder: false
+  darknet_load_decoder: False
 trainer:
   train_steps: 1001000 # 160 epochs at 64 batchsize -> 500500 * 64/16
   validation_steps: 625

@@ -1,4 +1,5 @@
-# Copyright 2021 The TensorFlow Authors. All Rights Reserved.
+# Lint as: python3
+# Copyright 2020 The TensorFlow Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,20 +12,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+# ==============================================================================
 """Defines the base task abstraction."""
 import abc
 from typing import Optional
 
 from absl import logging
 import tensorflow as tf
-
-from official.core import config_definitions
-from official.modeling import optimization
-from official.modeling import performance
-
-OptimizationConfig = optimization.OptimizationConfig
-RuntimeConfig = config_definitions.RuntimeConfig
 
 
 class Task(tf.Module, metaclass=abc.ABCMeta):
@@ -59,30 +53,6 @@ class Task(tf.Module, metaclass=abc.ABCMeta):
   @property
   def logging_dir(self) -> str:
     return self._logging_dir
-
-  @classmethod
-  def create_optimizer(cls, optimizer_config: OptimizationConfig,
-                       runtime_config: Optional[RuntimeConfig] = None):
-    """Creates an TF optimizer from configurations.
-
-    Args:
-      optimizer_config: the parameters of the Optimization settings.
-      runtime_config: the parameters of the runtime.
-
-    Returns:
-      A tf.optimizers.Optimizer object.
-    """
-    opt_factory = optimization.OptimizerFactory(optimizer_config)
-    optimizer = opt_factory.build_optimizer(opt_factory.build_learning_rate())
-    # Configuring optimizer when loss_scale is set in runtime config. This helps
-    # avoiding overflow/underflow for float16 computations.
-    if runtime_config and runtime_config.loss_scale:
-      optimizer = performance.configure_optimizer(
-          optimizer,
-          use_float16=runtime_config.mixed_precision_dtype == "float16",
-          loss_scale=runtime_config.loss_scale)
-
-    return optimizer
 
   def initialize(self, model: tf.keras.Model):
     """[Optional] A callback function used as CheckpointManager's init_fn.
@@ -225,14 +195,14 @@ class Task(tf.Module, metaclass=abc.ABCMeta):
       # For mixed precision, when a LossScaleOptimizer is used, the loss is
       # scaled to avoid numeric underflow.
       if isinstance(optimizer,
-                    tf.keras.mixed_precision.LossScaleOptimizer):
+                    tf.keras.mixed_precision.experimental.LossScaleOptimizer):
         scaled_loss = optimizer.get_scaled_loss(scaled_loss)
 
     tvars = model.trainable_variables
     grads = tape.gradient(scaled_loss, tvars)
 
     if isinstance(optimizer,
-                  tf.keras.mixed_precision.LossScaleOptimizer):
+                  tf.keras.mixed_precision.experimental.LossScaleOptimizer):
       grads = optimizer.get_unscaled_gradients(grads)
     optimizer.apply_gradients(list(zip(grads, tvars)))
     logs = {self.loss: loss}

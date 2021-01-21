@@ -507,7 +507,7 @@ if __name__ == '__main__':
       model=exp_cfg.Yolo(
           base='v4',
           min_level=3,
-          norm_activation=exp_cfg.common.NormActivation(activation='mish', use_sync_bn=False),
+          norm_activation=exp_cfg.common.NormActivation(activation='mish'),
           #norm_activation = exp_cfg.common.NormActivation(activation="leaky"),
           #_boxes = ['(10, 14)', '(23, 27)', '(37, 58)', '(81, 82)', '(135, 169)', '(344, 319)'],
           #_boxes = ["(10, 13)", "(16, 30)", "(33, 23)","(30, 61)", "(62, 45)", "(59, 119)","(116, 90)", "(156, 198)", "(373, 326)"],

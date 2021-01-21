@@ -24,7 +24,6 @@ from official.vision import keras_cv
 from official.vision.beta.configs import retinanet as exp_cfg
 from official.vision.beta.dataloaders import retinanet_input
 from official.vision.beta.dataloaders import tf_example_decoder
-from official.vision.beta.dataloaders import dataset_fn
 from official.vision.beta.dataloaders import tf_example_label_map_decoder
 from official.vision.beta.evaluation import coco_evaluator
 from official.vision.beta.modeling import factory
@@ -122,7 +121,7 @@ class RetinaNetTask(base_task.Task):
 
     reader = input_reader.InputReader(
         params,
-        dataset_fn=dataset_fn.pick_dataset_fn(params.file_type),
+        dataset_fn=tf.data.TFRecordDataset,
         decoder_fn=decoder.decode,
         parser_fn=parser.parse_fn(params.is_training))
     dataset = reader.read(input_context=input_context)
@@ -211,14 +210,21 @@ class RetinaNetTask(base_task.Task):
 
       # For mixed_precision policy, when LossScaleOptimizer is used, loss is
       # scaled for numerical stability.
-      if isinstance(optimizer, tf.keras.mixed_precision.LossScaleOptimizer):
+      if isinstance(
+          optimizer, tf.keras.mixed_precision.experimental.LossScaleOptimizer):
         scaled_loss = optimizer.get_scaled_loss(scaled_loss)
 
     tvars = model.trainable_variables
     grads = tape.gradient(scaled_loss, tvars)
     # Scales back gradient when LossScaleOptimizer is used.
-    if isinstance(optimizer, tf.keras.mixed_precision.LossScaleOptimizer):
+    if isinstance(
+        optimizer, tf.keras.mixed_precision.experimental.LossScaleOptimizer):
       grads = optimizer.get_unscaled_gradients(grads)
+
+    # Apply gradient clipping.
+    if self.task_config.gradient_clip_norm > 0:
+      grads, _ = tf.clip_by_global_norm(
+          grads, self.task_config.gradient_clip_norm)
     optimizer.apply_gradients(list(zip(grads, tvars)))
 
     logs = {self.loss: loss}

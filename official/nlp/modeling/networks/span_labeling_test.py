@@ -13,6 +13,13 @@
 # limitations under the License.
 # ==============================================================================
 """Tests for span_labeling network."""
+
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
+from absl.testing import parameterized
+
 import numpy as np
 import tensorflow as tf
 
@@ -174,38 +181,39 @@ class XLNetSpanLabelingTest(keras_parameterized.TestCase):
     hidden_size = 4
     sequence_data = np.random.uniform(
         size=(batch_size, seq_length, hidden_size)).astype('float32')
-    paragraph_mask = np.random.uniform(
+    position_mask = np.random.uniform(
         size=(batch_size, seq_length)).astype('float32')
     class_index = np.random.uniform(size=(batch_size)).astype('uint8')
     start_positions = np.zeros(shape=(batch_size)).astype('uint8')
 
     layer = span_labeling.XLNetSpanLabeling(
         input_width=hidden_size,
-        start_n_top=2,
-        end_n_top=2,
+        start_n_top=1,
+        end_n_top=1,
         activation='tanh',
         dropout_rate=0.,
         initializer='glorot_uniform')
     output = layer(sequence_data=sequence_data,
                    class_index=class_index,
-                   paragraph_mask=paragraph_mask,
+                   position_mask=position_mask,
                    start_positions=start_positions,
                    training=True)
 
     expected_keys = {
-        'start_logits', 'end_logits', 'class_logits', 'start_predictions',
-        'end_predictions',
+        'start_log_probs', 'end_log_probs', 'class_logits',
     }
     self.assertSetEqual(expected_keys, set(output.keys()))
 
-  def test_basic_invocation_beam_search(self):
+  @parameterized.named_parameters(
+      ('top_1', 1),
+      ('top_n', 5))
+  def test_basic_invocation_beam_search(self, top_n):
     batch_size = 2
     seq_length = 8
     hidden_size = 4
-    top_n = 5
     sequence_data = np.random.uniform(
         size=(batch_size, seq_length, hidden_size)).astype('float32')
-    paragraph_mask = np.random.uniform(
+    position_mask = np.random.uniform(
         size=(batch_size, seq_length)).astype('float32')
     class_index = np.random.uniform(size=(batch_size)).astype('uint8')
 
@@ -218,12 +226,11 @@ class XLNetSpanLabelingTest(keras_parameterized.TestCase):
         initializer='glorot_uniform')
     output = layer(sequence_data=sequence_data,
                    class_index=class_index,
-                   paragraph_mask=paragraph_mask,
+                   position_mask=position_mask,
                    training=False)
     expected_keys = {
-        'start_top_predictions', 'end_top_predictions', 'class_logits',
-        'start_top_index', 'end_top_index', 'start_logits',
-        'end_logits', 'start_predictions', 'end_predictions'
+        'start_top_log_probs', 'end_top_log_probs', 'class_logits',
+        'start_top_index', 'end_top_index',
     }
     self.assertSetEqual(expected_keys, set(output.keys()))
 
@@ -236,7 +243,7 @@ class XLNetSpanLabelingTest(keras_parameterized.TestCase):
     sequence_data = tf.keras.Input(shape=(seq_length, hidden_size),
                                    dtype=tf.float32)
     class_index = tf.keras.Input(shape=(), dtype=tf.uint8)
-    paragraph_mask = tf.keras.Input(shape=(seq_length), dtype=tf.float32)
+    position_mask = tf.keras.Input(shape=(seq_length), dtype=tf.float32)
     start_positions = tf.keras.Input(shape=(), dtype=tf.int32)
 
     layer = span_labeling.XLNetSpanLabeling(
@@ -249,27 +256,27 @@ class XLNetSpanLabelingTest(keras_parameterized.TestCase):
 
     output = layer(sequence_data=sequence_data,
                    class_index=class_index,
-                   paragraph_mask=paragraph_mask,
+                   position_mask=position_mask,
                    start_positions=start_positions)
     model = tf.keras.Model(
         inputs={
             'sequence_data': sequence_data,
             'class_index': class_index,
-            'paragraph_mask': paragraph_mask,
+            'position_mask': position_mask,
             'start_positions': start_positions,
         },
         outputs=output)
 
     sequence_data = tf.random.uniform(
         shape=(batch_size, seq_length, hidden_size), dtype=tf.float32)
-    paragraph_mask = tf.random.uniform(
+    position_mask = tf.random.uniform(
         shape=(batch_size, seq_length), dtype=tf.float32)
     class_index = tf.ones(shape=(batch_size,), dtype=tf.uint8)
     start_positions = tf.random.uniform(
         shape=(batch_size,), maxval=5, dtype=tf.int32)
 
     inputs = dict(sequence_data=sequence_data,
-                  paragraph_mask=paragraph_mask,
+                  position_mask=position_mask,
                   class_index=class_index,
                   start_positions=start_positions)
 

@@ -1,4 +1,5 @@
-# Copyright 2021 The TensorFlow Authors. All Rights Reserved.
+# Lint as: python3
+# Copyright 2020 The TensorFlow Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,7 +12,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+# ==============================================================================
 """Tests for train_ctl_lib."""
 import json
 import os
@@ -64,9 +65,10 @@ class TrainTest(tf.test.TestCase, parameterized.TestCase):
       combinations.combine(
           distribution_strategy=[
               strategy_combinations.default_strategy,
-              strategy_combinations.cloud_tpu_strategy,
+              strategy_combinations.tpu_strategy,
               strategy_combinations.one_device_strategy_gpu,
           ],
+          mode='eager',
           flag_mode=['train', 'eval', 'train_and_eval'],
           run_post_eval=[True, False]))
   def test_end_to_end(self, distribution_strategy, flag_mode, run_post_eval):
@@ -109,22 +111,6 @@ class TrainTest(tf.test.TestCase, parameterized.TestCase):
         model_dir=model_dir,
         run_post_eval=run_post_eval)
     print(logs)
-
-  def test_parse_configuration(self):
-    model_dir = self.get_temp_dir()
-    flags_dict = dict(
-        experiment='mock',
-        mode='train',
-        model_dir=model_dir,
-        params_override=json.dumps(self._test_config))
-    with flagsaver.flagsaver(**flags_dict):
-      params = train_utils.parse_configuration(flags.FLAGS, lock_return=True)
-      with self.assertRaises(ValueError):
-        params.override({'task': {'init_checkpoint': 'Foo'}})
-
-      params = train_utils.parse_configuration(flags.FLAGS, lock_return=False)
-      params.override({'task': {'init_checkpoint': 'Bar'}})
-      self.assertEqual(params.task.init_checkpoint, 'Bar')
 
 
 if __name__ == '__main__':

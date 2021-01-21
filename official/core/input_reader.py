@@ -1,4 +1,5 @@
-# Copyright 2021 The TensorFlow Authors. All Rights Reserved.
+# Lint as: python3
+# Copyright 2020 The TensorFlow Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,12 +12,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+# ==============================================================================
 """A common dataset reader."""
+
 import random
 from typing import Any, Callable, Optional
 
-from absl import logging
 import tensorflow as tf
 import tensorflow_datasets as tfds
 
@@ -29,10 +30,6 @@ def _get_random_integer():
 
 class InputReader:
   """Input reader that returns a tf.data.Dataset instance."""
-
-  # A static random number which is the same across different InputReader
-  # instances.
-  static_randnum = _get_random_integer()
 
   def __init__(self,
                params: cfg.DataConfig,
@@ -140,17 +137,12 @@ class InputReader:
     self._enable_tf_data_service = (
         params.enable_tf_data_service and params.tf_data_service_address)
     self._tf_data_service_address = params.tf_data_service_address
-    if self._enable_tf_data_service:
-      # Add a random seed as the tf.data service job name suffix, so tf.data
-      # service doesn't reuse the previous state if TPU worker gets preempted.
-      self._tf_data_service_job_name = (
-          params.tf_data_service_job_name + str(self.static_randnum))
-      self._enable_round_robin_tf_data_service = params.get(
-          'enable_round_robin_tf_data_service', False)
+    self._tf_data_service_job_name = params.tf_data_service_job_name
 
-  def _shard_files_then_read(
-      self, input_context: Optional[tf.distribute.InputContext] = None):
-    """Shards the data files and then sent a split to every worker to read."""
+  def _read_sharded_files(self,
+                          input_context: Optional[
+                              tf.distribute.InputContext] = None):
+    """Reads a dataset from sharded files."""
     dataset = tf.data.Dataset.from_tensor_slices(self._matched_files)
 
     # Shuffle and repeat at file level.
@@ -178,13 +170,14 @@ class InputReader:
         deterministic=self._deterministic)
     return dataset
 
-  def _read_files_then_shard(
-      self, input_context: Optional[tf.distribute.InputContext] = None):
-    """Sends all data files to every worker and then shard by data."""
+  def _read_single_file(self,
+                        input_context: Optional[
+                            tf.distribute.InputContext] = None):
+    """Reads a dataset from a single file."""
+    # Read from `self._shards` if it is provided.
     dataset = self._dataset_fn(self._matched_files)
 
-    # When `input_file` is a path to a single file or the number of files is
-    # less than the number of input pipelines, disable auto sharding
+    # When `input_file` is a path to a single file, disable auto sharding
     # so that same input file is sent to all workers.
     options = tf.data.Options()
     options.experimental_distribute.auto_shard_policy = (
@@ -245,18 +238,9 @@ class InputReader:
     if self._tfds_builder:
       dataset = self._read_tfds(input_context)
     elif len(self._matched_files) > 1:
-      if input_context and (len(self._matched_files) <
-                            input_context.num_input_pipelines):
-        logging.warn(
-            'The number of files %d is less than the number of input pipelines '
-            '%d. We will send all input files to every worker. '
-            'Please consider sharding your data into more files.',
-            len(self._matched_files), input_context.num_input_pipelines)
-        dataset = self._read_files_then_shard(input_context)
-      else:
-        dataset = self._shard_files_then_read(input_context)
+      dataset = self._read_sharded_files(input_context)
     elif len(self._matched_files) == 1:
-      dataset = self._read_files_then_shard(input_context)
+      dataset = self._read_single_file(input_context)
     else:
       raise ValueError('It is unexpected that `tfds_builder` is None and '
                        'there is also no `matched_files`.')
@@ -286,35 +270,12 @@ class InputReader:
 
     dataset = maybe_map_fn(dataset, self._postprocess_fn)
 
-    if self._enable_tf_data_service and input_context:
-      if self._enable_round_robin_tf_data_service:
-        replicas_per_input_pipeline = input_context.num_replicas_in_sync // (
-            input_context.num_input_pipelines)
-        base_consumer_index = input_context.input_pipeline_id * (
-            replicas_per_input_pipeline)
-        num_consumers = input_context.num_input_pipelines * (
-            replicas_per_input_pipeline)
-        range_dataset = tf.data.Dataset.range(replicas_per_input_pipeline)
-        dataset = range_dataset.map(lambda i: dataset.apply(  # pylint: disable=g-long-lambda
-            tf.data.experimental.service.distribute(
-                processing_mode='parallel_epochs',
-                service=self._tf_data_service_address,
-                job_name=self._tf_data_service_job_name,
-                consumer_index=base_consumer_index + i,
-                num_consumers=num_consumers)))
-        # Use parallel interleave to read multiple batches from a tf.data
-        # service worker in parallel.
-        dataset = dataset.interleave(
-            lambda x: x,
-            cycle_length=replicas_per_input_pipeline,
-            num_parallel_calls=replicas_per_input_pipeline,
-            deterministic=True)
-      else:
-        dataset = dataset.apply(
-            tf.data.experimental.service.distribute(
-                processing_mode='parallel_epochs',
-                service=self._tf_data_service_address,
-                job_name=self._tf_data_service_job_name))
+    if self._enable_tf_data_service:
+      dataset = dataset.apply(
+          tf.data.experimental.service.distribute(
+              processing_mode='parallel_epochs',
+              service=self._tf_data_service_address,
+              job_name=self._tf_data_service_job_name))
 
     if self._deterministic is not None:
       options = tf.data.Options()

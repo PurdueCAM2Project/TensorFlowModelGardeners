@@ -49,10 +49,7 @@ def _create_causal_attention_mask(
   concatenating 0s (representing memory positions) with a strictly upper
   triangular matrix of 1s.
 
-  We then flip the matrix values in order to match the representation where
-  real values are 1s.
-
-  Args:
+  Arguments:
     seq_length: int, The length of each sequence.
     memory_length: int, The length of memory blocks.
     dtype: dtype of the mask.
@@ -62,10 +59,10 @@ def _create_causal_attention_mask(
     A unidirectional attention mask of shape
     `[seq_length, seq_length + memory_length]`. E.g.:
 
-    [[1. 1. 1. 0. 0. 0.]
-     [1. 1. 1. 1. 0. 0.]
-     [1. 1. 1. 1. 1. 0.]
-     [1. 1. 1. 1. 1. 1.]]
+    [[0. 0. 0. 1. 1. 1.]
+     [0. 0. 0. 0. 1. 1.]
+     [0. 0. 0. 0. 0. 1.]
+     [0. 0. 0. 0. 0. 0.]]
   """
   ones_matrix = tf.ones([seq_length, seq_length], dtype=dtype)
   upper_triangular = tf.linalg.band_part(ones_matrix, 0, -1)
@@ -81,32 +78,7 @@ def _create_causal_attention_mask(
         [causal_attention_mask[:, :seq_length] + strictly_lower_triangular,
          causal_attention_mask[:, seq_length:]], 1)
 
-  return 1 - causal_attention_mask
-
-
-def _combine_masks(mask1, mask2, dtype, how="and"):
-  """Combines two masks.
-
-  Use "and" if trying to combine two existing masks.
-  Use "or" if trying to flip a few positions to "real".
-
-  Args:
-    mask1: tf.Tensor, input mask 1
-    mask2: tf.Tensor, input mask 2
-    dtype: tf.dtype
-    how: Which logical operation should run.
-
-  Returns:
-    The combined input masks.
-
-  """
-  if how == "and":
-    operator = tf.math.logical_and
-  else:
-    operator = tf.math.logical_or
-  return tf.cast(operator(
-      tf.cast(mask1, tf.bool),
-      tf.cast(mask2, tf.bool)), dtype=dtype)
+  return causal_attention_mask
 
 
 def _compute_attention_mask(
@@ -168,7 +140,8 @@ def _compute_attention_mask(
   # input_mask: [B, S]
   # permutation_mask: [B, S, S]
   if input_mask is not None and permutation_mask is not None:
-    data_mask = _combine_masks(input_mask[:, None, :], permutation_mask, dtype)
+    data_mask = input_mask[:, None, :] + permutation_mask
+
   elif input_mask is not None and permutation_mask is None:
     data_mask = input_mask[:, None, :]
   elif input_mask is None and permutation_mask is not None:
@@ -180,28 +153,28 @@ def _compute_attention_mask(
 
   if data_mask is not None:
     # All positions within state can be attended to.
-    state_mask = tf.ones([batch_size, tf.shape(data_mask)[1], memory_length],
-                         dtype=dtype)
+    state_mask = tf.zeros([batch_size, tf.shape(data_mask)[1], memory_length],
+                          dtype=dtype)
     # state_mask: [B, 1, M] or [B, S, M]
     data_mask = tf.concat([state_mask, data_mask], 2)
     # data_mask: [B, 1, S + M] or [B, S, S + M]
 
     if attention_type == "uni":
-      attention_mask = _combine_masks(causal_attention_mask,
-                                      data_mask[:, None, :, :],
-                                      dtype=dtype)
+      attention_mask = causal_attention_mask + data_mask[:, None, :, :]
     else:
       attention_mask = data_mask[:, None, :, :]
 
+  # Construct the content attention mask.
   if attention_mask is not None:
-    # Construct the content attention mask.
-    # This ensures that the mask allows the model to attend to positions in
-    # content positions (e.g. the content diagonal).
-    non_target_mask = tf.concat(
+    attention_mask = tf.cast(attention_mask > 0, dtype=dtype)
+
+    non_tgt_mask = -tf.eye(seq_length, dtype=dtype)
+    non_tgt_mask = tf.concat(
         [tf.zeros([seq_length, memory_length], dtype=dtype),
-         tf.eye(seq_length, dtype=dtype)], axis=-1)
-    content_attention_mask = _combine_masks(
-        attention_mask, non_target_mask, how="or", dtype=dtype)
+         non_tgt_mask], axis=-1)
+    content_attention_mask = tf.cast(
+        (attention_mask + non_tgt_mask[None, None, :, :]) > 0,
+        dtype=dtype)
   else:
     content_attention_mask = None
 
@@ -242,8 +215,7 @@ def _compute_segment_matrix(
   if segment_ids is None:
     return None
 
-  memory_padding = tf.zeros([batch_size, memory_length],
-                            dtype=segment_ids.dtype)
+  memory_padding = tf.zeros([batch_size, memory_length], dtype=tf.int32)
   padded_segment_ids = tf.concat([memory_padding, segment_ids], 1)
   # segment_ids: [B, S]
   # padded_segment_ids: [B, S + M]
@@ -392,7 +364,7 @@ class RelativePositionEncoding(tf.keras.layers.Layer):
   def call(self, pos_seq, batch_size=None):
     """Implements call() for the layer.
 
-    Args:
+    Arguments:
       pos_seq: A 1-D `Tensor`
       batch_size: The optionally provided batch size that tiles the relative
         positional encoding.
@@ -630,12 +602,6 @@ class XLNetBase(tf.keras.layers.Layer):
                       "enabled. Please enable `two_stream` to enable two "
                       "stream attention.")
 
-    if input_mask is not None:
-      dtype = input_mask.dtype
-    elif permutation_mask is not None:
-      dtype = permutation_mask.dtype
-    else:
-      dtype = tf.int32
     query_attention_mask, content_attention_mask = _compute_attention_mask(
         input_mask=input_mask,
         permutation_mask=permutation_mask,
@@ -643,7 +609,7 @@ class XLNetBase(tf.keras.layers.Layer):
         seq_length=seq_length,
         memory_length=memory_length,
         batch_size=batch_size,
-        dtype=dtype)
+        dtype=tf.float32)
     relative_position_encoding = _compute_positional_encoding(
         attention_type=self._attention_type,
         position_encoding_layer=self.position_encoding,

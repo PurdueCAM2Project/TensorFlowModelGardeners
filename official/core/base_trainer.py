@@ -1,4 +1,5 @@
-# Copyright 2021 The TensorFlow Authors. All Rights Reserved.
+# Lint as: python3
+# Copyright 2020 The TensorFlow Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,75 +12,49 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+# ==============================================================================
 """Standard Trainer implementation.
 
 The base trainer implements the Orbit `StandardTrainable` and
 `StandardEvaluable` interfaces. Trainers inside this project should be
 interchangable and independent on model architectures and tasks.
 """
-
-from absl import logging
+from typing import Optional
 import gin
 import orbit
 import tensorflow as tf
 
 from official.core import base_task
 from official.core import config_definitions
+from official.modeling import optimization
+from official.modeling import performance
 
 ExperimentConfig = config_definitions.ExperimentConfig
 TrainerConfig = config_definitions.TrainerConfig
+RuntimeConfig = config_definitions.RuntimeConfig
 
 
-class Recovery:
-  """Built-in model blowup recovery module.
+def create_optimizer(trainer_config: TrainerConfig,
+                     runtime_config: Optional[RuntimeConfig] = None):
+  """Creates an TF optimizer from configurations.
 
-  Checks the loss value by the given threshold. If applicable, recover the
-  model by reading the checkpoint on disk.
+  Args:
+    trainer_config: the parameters of the trainer.
+    runtime_config: the parameters of the runtime.
+
+  Returns:
+    A tf.optimizers.Optimizer object.
   """
-
-  def __init__(self,
-               loss_upper_bound: float,
-               checkpoint_manager: tf.train.CheckpointManager,
-               recovery_begin_steps: int = 0,
-               recovery_max_trials: int = 3):
-    self.recover_counter = 0
-    self.recovery_begin_steps = recovery_begin_steps
-    self.recovery_max_trials = recovery_max_trials
-    self.loss_upper_bound = loss_upper_bound
-    self.checkpoint_manager = checkpoint_manager
-
-  def should_recover(self, loss_value, global_step):
-    if tf.math.is_nan(loss_value):
-      return True
-    if (global_step >= self.recovery_begin_steps and
-        loss_value > self.loss_upper_bound):
-      return True
-    return False
-
-  def maybe_recover(self, loss_value, global_step):
-    """Conditionally recovers the training by triggering checkpoint restoration.
-
-    Args:
-      loss_value: the loss value as a float.
-      global_step: the number of global training steps.
-
-    Raises:
-      RuntimeError: when recovery happens more than the max number of trials,
-      the job should crash.
-    """
-    if not self.should_recover(loss_value, global_step):
-      return
-    self.recover_counter += 1
-    if self.recover_counter > self.recovery_max_trials:
-      raise RuntimeError(
-          "The loss value is NaN after training loop and it happens %d times." %
-          self.recover_counter)
-    # Loads the previous good checkpoint.
-    checkpoint_path = self.checkpoint_manager.restore_or_initialize()
-    logging.warning(
-        "Recovering the model from checkpoint: %s. The loss value becomes "
-        "%f at step %d.", checkpoint_path, loss_value, global_step)
+  opt_factory = optimization.OptimizerFactory(trainer_config.optimizer_config)
+  optimizer = opt_factory.build_optimizer(opt_factory.build_learning_rate())
+  # Configuring optimizer when loss_scale is set in runtime config. This helps
+  # avoiding overflow/underflow for float16 computations.
+  if runtime_config and runtime_config.loss_scale:
+    optimizer = performance.configure_optimizer(
+        optimizer,
+        use_float16=runtime_config.mixed_precision_dtype == "float16",
+        loss_scale=runtime_config.loss_scale)
+  return optimizer
 
 
 @gin.configurable
@@ -115,9 +90,8 @@ class Trainer(orbit.StandardTrainer, orbit.StandardEvaluator):
     self._config = config
     self._task = task
     self._model = model
-    self._optimizer = optimizer
     self._checkpoint_exporter = checkpoint_exporter
-    self._recovery = None
+    self._optimizer = optimizer
 
     # global_step increases by 1 after each training iteration.
     # We should have global_step.numpy() == self.optimizer.iterations.numpy()
@@ -160,8 +134,7 @@ class Trainer(orbit.StandardTrainer, orbit.StandardEvaluator):
           self,
           eval_dataset,
           options=orbit.StandardEvaluatorOptions(
-              use_tf_function=config.trainer.eval_tf_function,
-              use_tf_while_loop=config.trainer.eval_tf_while_loop))
+              use_tf_function=config.trainer.eval_tf_function))
 
   def _validate_params(self, config):
     r"""Validates if the configuration object passed to the Trainer.
@@ -250,22 +223,8 @@ class Trainer(orbit.StandardTrainer, orbit.StandardEvaluator):
     """Accesses the training checkpoint."""
     return self._checkpoint
 
-  def add_recovery(self, params: TrainerConfig,
-                   checkpoint_manager: tf.train.CheckpointManager):
-    if params.recovery_max_trials >= 0:
-      self._recovery = Recovery(
-          loss_upper_bound=params.loss_upper_bound,
-          recovery_begin_steps=params.recovery_begin_steps,
-          recovery_max_trials=params.recovery_max_trials,
-          checkpoint_manager=checkpoint_manager)
-
   def train_loop_end(self):
     """See base class."""
-    # Checks if the model numeric status is stable and conducts the checkpoint
-    # recovery accordingly.
-    if self._recovery:
-      self._recovery.maybe_recover(self.train_loss.result().numpy(),
-                                   self.global_step.numpy())
     logs = {}
     for metric in self.train_metrics + [self.train_loss]:
       logs[metric.name] = metric.result()
@@ -301,8 +260,7 @@ class Trainer(orbit.StandardTrainer, orbit.StandardEvaluator):
     def step_fn(inputs):
       logs = self.task.validation_step(
           inputs, model=self.model, metrics=self.validation_metrics)
-      if self.task.loss in logs:
-        self._validation_loss.update_state(logs[self.task.loss])
+      self._validation_loss.update_state(logs[self.task.loss])
       return logs
 
     distributed_outputs = self.strategy.run(step_fn, args=(next(iterator),))
@@ -312,14 +270,8 @@ class Trainer(orbit.StandardTrainer, orbit.StandardEvaluator):
   def eval_end(self, aggregated_logs=None):
     """Processes evaluation results."""
     logs = {}
-    for metric in self.validation_metrics:
+    for metric in self.validation_metrics + [self.validation_loss]:
       logs[metric.name] = metric.result()
-    if self.validation_loss.count.numpy() != 0:
-      logs[self.validation_loss.name] = self.validation_loss.result()
-    else:
-      # `self.validation_loss` metric was not updated, because the validation
-      # loss was not returned from the task's `validation_step` method.
-      logging.info("The task did not report validation loss.")
     if aggregated_logs:
       metrics = self.task.reduce_aggregated_logs(aggregated_logs)
       logs.update(metrics)

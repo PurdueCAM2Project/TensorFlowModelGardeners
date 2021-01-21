@@ -14,6 +14,10 @@
 # ==============================================================================
 """Tests for nlp.nhnet.decoder."""
 
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
 import numpy as np
 import tensorflow as tf
 from official.nlp.modeling import layers

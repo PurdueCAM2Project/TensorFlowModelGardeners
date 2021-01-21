@@ -29,16 +29,15 @@ from official.utils.testing import integration
 from official.vision.image_classification import mnist_main
 
 
-mnist_main.define_mnist_flags()
-
-
 def eager_strategy_combinations():
   return combinations.combine(
       distribution=[
           strategy_combinations.default_strategy,
-          strategy_combinations.cloud_tpu_strategy,
+          strategy_combinations.tpu_strategy,
           strategy_combinations.one_device_strategy_gpu,
-      ],)
+      ],
+      mode="eager",
+  )
 
 
 class KerasMnistTest(tf.test.TestCase, parameterized.TestCase):
@@ -48,6 +47,7 @@ class KerasMnistTest(tf.test.TestCase, parameterized.TestCase):
   @classmethod
   def setUpClass(cls):  # pylint: disable=invalid-name
     super(KerasMnistTest, cls).setUpClass()
+    mnist_main.define_mnist_flags()
 
   def tearDown(self):
     super(KerasMnistTest, self).tearDown()
@@ -81,7 +81,7 @@ class KerasMnistTest(tf.test.TestCase, parameterized.TestCase):
     integration.run_synthetic(
         main=run,
         synth=False,
-        tmp_root=self.create_tempdir().full_path,
+        tmp_root=self.get_temp_dir(),
         extra_flags=extra_flags)
 
 

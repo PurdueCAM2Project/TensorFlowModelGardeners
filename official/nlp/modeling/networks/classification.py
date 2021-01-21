@@ -14,7 +14,11 @@
 # ==============================================================================
 """Classification and regression network."""
 # pylint: disable=g-classes-have-attributes
-import collections
+from __future__ import absolute_import
+from __future__ import division
+# from __future__ import google_type_annotations
+from __future__ import print_function
+
 import tensorflow as tf
 
 
@@ -28,7 +32,7 @@ class Classification(tf.keras.Model):
   *Note* that the network is constructed by
   [Keras Functional API](https://keras.io/guides/functional_api/).
 
-  Args:
+  Arguments:
     input_width: The innermost dimension of the input tensor to this network.
     num_classes: The number of classes that this network should classify to. If
       equal to 1, a regression problem is assumed.
@@ -45,27 +49,36 @@ class Classification(tf.keras.Model):
                initializer='glorot_uniform',
                output='logits',
                **kwargs):
+    self._self_setattr_tracking = False
+    self._config_dict = {
+        'input_width': input_width,
+        'num_classes': num_classes,
+        'initializer': initializer,
+        'output': output,
+    }
 
     cls_output = tf.keras.layers.Input(
         shape=(input_width,), name='cls_output', dtype=tf.float32)
 
-    logits = tf.keras.layers.Dense(
+    self.logits = tf.keras.layers.Dense(
         num_classes,
         activation=None,
         kernel_initializer=initializer,
         name='predictions/transform/logits')(
             cls_output)
 
+    policy = tf.keras.mixed_precision.experimental.global_policy()
+    if policy.name == 'mixed_bfloat16':
+      # b/158514794: bf16 is not stable with post-softmax cross-entropy.
+      policy = tf.float32
+    predictions = tf.keras.layers.Activation(
+        tf.nn.log_softmax, dtype=policy)(
+            self.logits)
+
     if output == 'logits':
-      output_tensors = logits
+      output_tensors = self.logits
     elif output == 'predictions':
-      policy = tf.keras.mixed_precision.experimental.global_policy()
-      if policy.name == 'mixed_bfloat16':
-        # b/158514794: bf16 is not stable with post-softmax cross-entropy.
-        policy = tf.float32
-      output_tensors = tf.keras.layers.Activation(
-          tf.nn.log_softmax, dtype=policy)(
-              logits)
+      output_tensors = predictions
     else:
       raise ValueError(
           ('Unknown `output` value "%s". `output` can be either "logits" or '
@@ -74,30 +87,8 @@ class Classification(tf.keras.Model):
     super(Classification, self).__init__(
         inputs=[cls_output], outputs=output_tensors, **kwargs)
 
-    # b/164516224
-    # Once we've created the network using the Functional API, we call
-    # super().__init__ as though we were invoking the Functional API Model
-    # constructor, resulting in this object having all the properties of a model
-    # created using the Functional API. Once super().__init__ is called, we
-    # can assign attributes to `self` - note that all `self` assignments are
-    # below this line.
-    config_dict = {
-        'input_width': input_width,
-        'num_classes': num_classes,
-        'initializer': initializer,
-        'output': output,
-    }
-    # We are storing the config dict as a namedtuple here to ensure checkpoint
-    # compatibility with an earlier version of this model which did not track
-    # the config dict attribute. TF does not track immutable attrs which
-    # do not contain Trackables, so by creating a config namedtuple instead of
-    # a dict we avoid tracking it.
-    config_cls = collections.namedtuple('Config', config_dict.keys())
-    self._config = config_cls(**config_dict)
-    self.logits = logits
-
   def get_config(self):
-    return dict(self._config._asdict())
+    return self._config_dict
 
   @classmethod
   def from_config(cls, config, custom_objects=None):

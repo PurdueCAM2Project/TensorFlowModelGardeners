@@ -24,6 +24,6 @@ from official.modeling import hyperparams
 @dataclasses.dataclass
 class NormActivation(hyperparams.Config):
   activation: str = 'relu'
-  use_sync_bn: bool = True
+  use_sync_bn: bool = False
   norm_momentum: float = 0.99
   norm_epsilon: float = 0.001

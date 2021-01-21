@@ -204,8 +204,7 @@ class BertEncoderTest(keras_parameterized.TestCase):
         attention_dropout=0.22,
         initializer="glorot_uniform",
         output_range=-1,
-        embedding_width=16,
-        embedding_layer=None)
+        embedding_width=16)
     network = bert_encoder.BertEncoder(**kwargs)
     expected_config = dict(kwargs)
     expected_config["inner_activation"] = tf.keras.activations.serialize(

@@ -171,7 +171,8 @@ def build_yolo(input_specs, model_config, l2_regularization, masks, xy_scales,
   print(input_specs)
   print(l2_regularization)
 
-  backbone = factory.build_backbone(input_specs, model_config, l2_regularization)
+  backbone = factory.build_backbone(input_specs, model_config,
+                                    l2_regularization)
   decoder = build_yolo_decoder(backbone.output_specs, model_config,
                                l2_regularization)
   head = build_yolo_head(backbone.output_specs, model_config, l2_regularization)

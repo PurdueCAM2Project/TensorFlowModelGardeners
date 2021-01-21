@@ -14,7 +14,11 @@
 # ==============================================================================
 """Input pipelines."""
 
-import tensorflow as tf
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
+import tensorflow.compat.v2 as tf
 
 
 def decode_record(record, name_to_features):
@@ -218,7 +222,7 @@ def get_input_dataset(input_file_pattern,
   # When using TPU pods, we need to clone dataset across
   # workers and need to pass in function that returns the dataset rather
   # than passing dataset instance itself.
-  use_dataset_fn = isinstance(strategy, tf.distribute.TPUStrategy)
+  use_dataset_fn = isinstance(strategy, tf.distribute.experimental.TPUStrategy)
   if use_dataset_fn:
     if batch_size % strategy.num_replicas_in_sync != 0:
       raise ValueError(

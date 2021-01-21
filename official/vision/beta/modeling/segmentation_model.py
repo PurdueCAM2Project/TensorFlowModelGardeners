@@ -26,11 +26,7 @@ class SegmentationModel(tf.keras.Model):
 
   Input images are passed through backbone first. Decoder network is then
   applied, and finally, segmentation head is applied on the output of the
-  decoder network. Layers such as ASPP should be part of decoder. Any feature
-  fusion is done as part of the segmentation head (i.e. deeplabv3+ feature
-  fusion is not part of the decoder, instead it is part of the segmentation
-  head). This way, different feature fusion techniques can be combined with
-  different backbones, and decoders.
+  decoder network. Layers such as ASPP should be part of decoder.
   """
 
   def __init__(self,
@@ -57,14 +53,11 @@ class SegmentationModel(tf.keras.Model):
     self.head = head
 
   def call(self, inputs, training=None):
-    backbone_features = self.backbone(inputs)
+    features = self.backbone(inputs)
 
     if self.decoder:
-      decoder_features = self.decoder(backbone_features)
-    else:
-      decoder_features = backbone_features
-
-    return self.head(backbone_features, decoder_features)
+      features = self.decoder(features)
+    return self.head(features)
 
   @property
   def checkpoint_items(self):

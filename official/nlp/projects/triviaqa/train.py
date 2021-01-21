@@ -146,7 +146,7 @@ def read_model_config(encoder,
   return encoder_config
 
 
-@gin.configurable(denylist=[
+@gin.configurable(blacklist=[
     'model',
     'strategy',
     'train_dataset',

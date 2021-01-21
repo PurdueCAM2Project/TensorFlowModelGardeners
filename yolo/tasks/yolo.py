@@ -288,7 +288,6 @@ class YoloTask(base_task.Task):
       from yolo.utils import DarkNetConverter
       from yolo.utils._darknet2tf.load_weights import split_converter
       from yolo.utils._darknet2tf.load_weights2 import load_weights_backbone
-      from yolo.utils._darknet2tf.load_weights2 import load_weights_neck
       from yolo.utils._darknet2tf.load_weights2 import load_head
       from yolo.utils._darknet2tf.load_weights2 import load_weights_prediction_layers
       from yolo.utils.downloads.file_manager import download
@@ -329,7 +328,7 @@ class YoloTask(base_task.Task):
 
       if self.task_config.darknet_load_decoder:
         if neck != None:
-          load_weights_neck(model.decoder.neck, neck)
+          load_weights_backbone(model.decoder.neck, neck)
           model.decoder.neck.trainable = False
         cfgheads = load_head(model.decoder.head, decoder)
         model.decoder.head.trainable = False

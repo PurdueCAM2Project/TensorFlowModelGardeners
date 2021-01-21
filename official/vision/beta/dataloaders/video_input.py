@@ -15,7 +15,7 @@
 # ==============================================================================
 """Parser for video and label datasets."""
 
-from typing import Dict, Optional, Tuple, Union
+from typing import Dict, Optional, Tuple
 
 from absl import logging
 import tensorflow as tf
@@ -34,9 +34,8 @@ def _process_image(image: tf.Tensor,
                    num_frames: int = 32,
                    stride: int = 1,
                    num_test_clips: int = 1,
-                   min_resize: int = 256,
-                   crop_size: int = 224,
-                   num_crops: int = 1,
+                   min_resize: int = 224,
+                   crop_size: int = 200,
                    zero_centering_image: bool = False,
                    seed: Optional[int] = None) -> tf.Tensor:
   """Processes a serialized image tensor.
@@ -55,7 +54,6 @@ def _process_image(image: tf.Tensor,
     min_resize: Frames are resized so that min(height, width) is min_resize.
     crop_size: Final size of the frame after cropping the resized frames. Both
       height and width are the same.
-    num_crops: Number of crops to perform on the resized frames.
     zero_centering_image: If True, frames are normalized to values in [-1, 1].
       If False, values in [0, 1].
     seed: A deterministic seed to use when sampling.
@@ -95,9 +93,8 @@ def _process_image(image: tf.Tensor,
                                          seed)
     image = preprocess_ops_3d.random_flip_left_right(image, seed)
   else:
-    # Crop of the frames.
-    image = preprocess_ops_3d.crop_image(image, crop_size, crop_size, False,
-                                         num_crops)
+    # Central crop of the frames.
+    image = preprocess_ops_3d.crop_image(image, crop_size, crop_size, False)
 
   # Cast the frames in float32, normalizing according to zero_centering_image.
   return preprocess_ops_3d.normalize_image(image, zero_centering_image)
@@ -106,8 +103,7 @@ def _process_image(image: tf.Tensor,
 def _postprocess_image(image: tf.Tensor,
                        is_training: bool = True,
                        num_frames: int = 32,
-                       num_test_clips: int = 1,
-                       num_test_crops: int = 1) -> tf.Tensor:
+                       num_test_clips: int = 1) -> tf.Tensor:
   """Processes a batched Tensor of frames.
 
   The same parameters used in process should be used here.
@@ -121,19 +117,16 @@ def _postprocess_image(image: tf.Tensor,
       will sample multiple linearly spaced clips within each video at test time.
       If 1, then a single clip in the middle of the video is sampled. The clips
       are aggreagated in the batch dimension.
-    num_test_crops: Number of test crops (1 by default). If more than 1, there
-      are multiple crops for each clip at test time. If 1, there is a single
-      central crop. The crops are aggreagated in the batch dimension.
 
   Returns:
     Processed frames. Tensor of shape
-      [batch * num_test_clips * num_test_crops, num_frames, height, width, 3].
+      [batch * num_test_clips, num_frames, height, width, 3].
   """
-  num_views = num_test_clips * num_test_crops
-  if num_views > 1 and not is_training:
-    # In this case, multiple views are merged together in batch dimenstion which
-    # will be batch * num_views.
-    image = tf.reshape(image, [-1, num_frames] + image.shape[2:].as_list())
+  if num_test_clips > 1 and not is_training:
+    # In this case, multiple clips are merged together in batch dimenstion which
+    # will be B * num_test_clips.
+    image = tf.reshape(
+        image, (-1, num_frames, image.shape[2], image.shape[3], image.shape[4]))
 
   return image
 
@@ -153,11 +146,6 @@ def _process_label(label: tf.Tensor,
   if one_hot_label:
     # Replace label index by one hot representation.
     label = tf.one_hot(label, num_classes)
-    if len(label.shape.as_list()) > 1:
-      label = tf.reduce_sum(label, axis=0)
-    if num_classes == 1:
-      # The trick for single label.
-      label = 1 - label
 
   return label
 
@@ -166,41 +154,26 @@ class Decoder(decoder.Decoder):
   """A tf.Example decoder for classification task."""
 
   def __init__(self, image_key: str = IMAGE_KEY, label_key: str = LABEL_KEY):
-    self._image_key = image_key
-    self._label_key = label_key
+    self._image_key = IMAGE_KEY
+    self._label_key = LABEL_KEY
     self._context_description = {
         # One integer stored in context.
-        self._label_key: tf.io.VarLenFeature(tf.int64),
+        self._label_key: tf.io.FixedLenFeature((), tf.int64),
     }
     self._sequence_description = {
         # Each image is a string encoding JPEG.
         self._image_key: tf.io.FixedLenSequenceFeature((), tf.string),
     }
 
-  def add_feature(self, feature_name: str,
-                  feature_type: Union[tf.io.VarLenFeature,
-                                      tf.io.FixedLenFeature,
-                                      tf.io.FixedLenSequenceFeature]):
-    self._sequence_description[feature_name] = feature_type
-
-  def add_context(self, feature_name: str,
-                  feature_type: Union[tf.io.VarLenFeature,
-                                      tf.io.FixedLenFeature,
-                                      tf.io.FixedLenSequenceFeature]):
-    self._context_description[feature_name] = feature_type
-
   def decode(self, serialized_example):
     """Parses a single tf.Example into image and label tensors."""
-    result = {}
     context, sequences = tf.io.parse_single_sequence_example(
         serialized_example, self._context_description,
         self._sequence_description)
-    result.update(context)
-    result.update(sequences)
-    for key, value in result.items():
-      if isinstance(value, tf.SparseTensor):
-        result[key] = tf.sparse.to_dense(value)
-    return result
+    return {
+        self._image_key: sequences[self._image_key],
+        self._label_key: context[self._label_key]
+    }
 
 
 class Parser(parser.Parser):
@@ -215,16 +188,11 @@ class Parser(parser.Parser):
     self._num_test_clips = input_params.num_test_clips
     self._min_resize = input_params.min_image_size
     self._crop_size = input_params.feature_shape[1]
-    self._num_crops = input_params.num_test_crops
     self._one_hot_label = input_params.one_hot
     self._num_classes = input_params.num_classes
     self._image_key = image_key
     self._label_key = label_key
     self._dtype = tf.dtypes.as_dtype(input_params.dtype)
-    self._output_audio = input_params.output_audio
-    if self._output_audio:
-      self._audio_feature = input_params.audio_feature
-      self._audio_shape = input_params.audio_feature_shape
 
   def _parse_train_data(
       self, decoded_tensors: Dict[str, tf.Tensor]
@@ -232,6 +200,7 @@ class Parser(parser.Parser):
     """Parses data for training."""
     # Process image and label.
     image = decoded_tensors[self._image_key]
+    label = decoded_tensors[self._label_key]
     image = _process_image(
         image=image,
         is_training=True,
@@ -241,27 +210,16 @@ class Parser(parser.Parser):
         min_resize=self._min_resize,
         crop_size=self._crop_size)
     image = tf.cast(image, dtype=self._dtype)
-    features = {'image': image}
-
-    label = decoded_tensors[self._label_key]
     label = _process_label(label, self._one_hot_label, self._num_classes)
 
-    if self._output_audio:
-      audio = decoded_tensors[self._audio_feature]
-      audio = tf.cast(audio, dtype=self._dtype)
-      # TODO(yeqing): synchronize audio/video sampling. Especially randomness.
-      audio = preprocess_ops_3d.sample_sequence(
-          audio, self._audio_shape[0], random=False, stride=1)
-      audio = tf.ensure_shape(audio, self._audio_shape)
-      features['audio'] = audio
-
-    return features, label
+    return {'image': image}, label
 
   def _parse_eval_data(
       self, decoded_tensors: Dict[str, tf.Tensor]
   ) -> Tuple[Dict[str, tf.Tensor], tf.Tensor]:
     """Parses data for evaluation."""
     image = decoded_tensors[self._image_key]
+    label = decoded_tensors[self._label_key]
     image = _process_image(
         image=image,
         is_training=False,
@@ -269,23 +227,11 @@ class Parser(parser.Parser):
         stride=self._stride,
         num_test_clips=self._num_test_clips,
         min_resize=self._min_resize,
-        crop_size=self._crop_size,
-        num_crops=self._num_crops)
+        crop_size=self._crop_size)
     image = tf.cast(image, dtype=self._dtype)
-    features = {'image': image}
-
-    label = decoded_tensors[self._label_key]
     label = _process_label(label, self._one_hot_label, self._num_classes)
 
-    if self._output_audio:
-      audio = decoded_tensors[self._audio_feature]
-      audio = tf.cast(audio, dtype=self._dtype)
-      audio = preprocess_ops_3d.sample_sequence(
-          audio, 20, random=False, stride=1)
-      audio = tf.ensure_shape(audio, [20, 2048])
-      features['audio'] = audio
-
-    return features, label
+    return {'image': image}, label
 
 
 class PostBatchProcessor(object):
@@ -296,18 +242,17 @@ class PostBatchProcessor(object):
 
     self._num_frames = input_params.feature_shape[0]
     self._num_test_clips = input_params.num_test_clips
-    self._num_test_crops = input_params.num_test_crops
 
-  def __call__(self, features: Dict[str, tf.Tensor],
-               label: tf.Tensor) -> Tuple[Dict[str, tf.Tensor], tf.Tensor]:
+  def __call__(
+      self,
+      image: Dict[str, tf.Tensor],
+      label: tf.Tensor) -> Tuple[Dict[str, tf.Tensor], tf.Tensor]:
     """Parses a single tf.Example into image and label tensors."""
-    for key in ['image', 'audio']:
-      if key in features:
-        features[key] = _postprocess_image(
-            image=features[key],
-            is_training=self._is_training,
-            num_frames=self._num_frames,
-            num_test_clips=self._num_test_clips,
-            num_test_crops=self._num_test_crops)
+    image = image['image']
+    image = _postprocess_image(
+        image=image,
+        is_training=self._is_training,
+        num_frames=self._num_frames,
+        num_test_clips=self._num_test_clips)
 
-    return features, label
+    return {'image': image}, label
