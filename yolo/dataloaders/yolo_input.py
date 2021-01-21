@@ -38,7 +38,7 @@ class Parser(parser.Parser):
                aug_rand_hue=True,
                anchors=None,
                seed=10,
-               dtype='float16'):
+               dtype='float32'):
     """Initializes parameters for parsing annotations in the dataset.
     Args:
       image_w: a `Tensor` or `int` for width of input image.
@@ -98,6 +98,7 @@ class Parser(parser.Parser):
 
     self._seed = seed
 
+    print(dtype)
     if dtype == 'float16':
       self._dtype = tf.float16
     elif dtype == 'bfloat16':
@@ -306,5 +307,5 @@ class Parser(parser.Parser):
     label.update({'grid_form': grid})
     return image, label
 
-  def postprocess_fn(self):
-    return self._postprocess_fn if not self._fixed_size else None
+  def postprocess_fn(self, is_training = True):
+    return self._postprocess_fn if not self._fixed_size and is_training else None

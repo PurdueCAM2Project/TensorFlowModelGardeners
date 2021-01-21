@@ -98,7 +98,7 @@ class Parser(parser.Parser):
     image.set_shape((None, None, 3))
     image = tf.cast(image, tf.float32)
     image = center_resize(image)
-    
+
     w = tf.cast(tf.shape(image)[0], tf.float32)
     h = tf.cast(tf.shape(image)[1], tf.int32)
     
@@ -182,12 +182,11 @@ if __name__ == "__main__":
   p = cli.Decoder()
   r = Parser([256, 256, 3], 2)
   a = a.map(p.decode)
-  a = a.map(r.parse_fn(is_training = True))
+  a = a.map(r.parse_fn(is_training = False))
   print(a)
 
   for i, (image, label) in enumerate(a):
-    if i > 10: 
+    if i > 1000: 
       break
 
-    plt.imshow(image.numpy())
-    plt.show()
+    print (i)

@@ -99,10 +99,7 @@ class YoloTask(base_task.Task):
         aug_rand_hue=params.parser.aug_rand_hue,
         anchors=anchors)
 
-    if params.is_training:
-      post_process_fn = parser.postprocess_fn()
-    else:
-      post_process_fn = None
+    post_process_fn = parser.postprocess_fn(is_training = params.is_training)
 
     reader = input_reader.InputReader(
         params,
