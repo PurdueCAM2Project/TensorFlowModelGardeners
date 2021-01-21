@@ -97,10 +97,11 @@ class Parser(parser.Parser):
     image = tf.io.decode_image(decoded_tensors['image/encoded'])
     image.set_shape((None, None, 3))
     image = tf.cast(image, tf.float32)
+    image = center_resize(image)
+    
     w = tf.cast(tf.shape(image)[0], tf.float32)
     h = tf.cast(tf.shape(image)[1], tf.int32)
-
-    image = center_resize(image)
+    
 
     if self._aug_rand_aspect:
       aspect = tf.random.uniform(
