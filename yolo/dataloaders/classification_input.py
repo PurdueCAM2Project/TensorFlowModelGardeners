@@ -7,6 +7,29 @@ import tensorflow_addons as tfa
 
 from official.vision.beta.dataloaders import parser
 
+def center_resize(image,
+                  width=None,
+                  height=None,
+                  target_dim=None):
+  if width is None or height is None:
+    shape = tf.shape(image)
+    if tf.shape(shape)[0] == 4:
+      width = shape[1]
+      height = shape[2]
+    else:
+      width = shape[0]
+      height = shape[1]
+
+  clipper = tf.math.maximum(width, height)
+  if target_dim is None:
+    target_dim = clipper
+
+  pad_width = clipper - width
+  pad_height = clipper - height
+  image = tf.image.pad_to_bounding_box(image, pad_width // 2, pad_height // 2,
+                                       clipper, clipper)
+
+  return image
 
 class Parser(parser.Parser):
   """Parser to parse an image and its annotations into a dictionary of tensors."""
@@ -77,6 +100,8 @@ class Parser(parser.Parser):
     w = tf.cast(tf.shape(image)[0], tf.float32)
     h = tf.cast(tf.shape(image)[1], tf.int32)
 
+    image = center_resize(image)
+
     if self._aug_rand_aspect:
       aspect = tf.random.uniform(
           [], minval=3, maxval=5, seed=self._seed, dtype=tf.float32) / 4.
@@ -136,6 +161,7 @@ class Parser(parser.Parser):
     image = tf.io.decode_image(decoded_tensors['image/encoded'])
     image.set_shape((None, None, 3))
     image = tf.cast(image, tf.float32)
+    image = center_resize(image)
     image = tf.image.resize_with_pad(
         image,
         target_width=self._output_size[0],
@@ -144,3 +170,23 @@ class Parser(parser.Parser):
     # label = tf.one_hot(decoded_tensors['image/class/label'], self._num_classes)
     label = decoded_tensors['image/class/label']
     return image, label
+
+
+if __name__ == "__main__":
+  import tensorflow_datasets as tfds 
+  import matplotlib.pyplot as plt
+  import yolo.dataloaders.decoders.classification_tfds_decoder as cli
+
+  a = tfds.load("cats_vs_dogs", split = "train")
+  p = cli.Decoder()
+  r = Parser([256, 256, 3], 2)
+  a = a.map(p.decode)
+  a = a.map(r.parse_fn(is_training = True))
+  print(a)
+
+  for i, (image, label) in enumerate(a):
+    if i > 10: 
+      break
+
+    plt.imshow(image.numpy())
+    plt.show()
