@@ -15,6 +15,10 @@
 # ==============================================================================
 """TensorFlow Model Garden Vision training driver."""
 from yolo.utils.run_utils import prep_gpu
+try:
+  prep_gpu()
+except:
+  print("GPUs ready")
   
 from absl import app
 from absl import flags
@@ -39,11 +43,11 @@ export LD_LIBRARY_PATH=/usr/local/cuda/lib64
 
 
 '''
-python3 -m yolo.train_vm --mode=train_and_eval --experiment=darknet_classification --model_dir=training_dir --config_file=yolo/configs/experiments/darknet53.yaml
+python3 -m yolo.train --mode=train_and_eval --experiment=darknet_classification --model_dir=training_dir --config_file=yolo/configs/experiments/darknet53.yaml
 '''
 
 '''
-python3 -m yolo.train_vm --mode=train_and_eval --experiment=yolo_v4_coco --model_dir=training_dir --config_file=yolo/configs/experiments/yolov4.yaml
+python3 -m yolo.train --mode=train_and_eval --experiment=yolo_v4_coco --model_dir=training_dir --config_file=yolo/configs/experiments/yolov4.yaml
 '''
 def main(_):
   gin.parse_config_files_and_bindings(FLAGS.gin_file, FLAGS.gin_params)
