@@ -141,6 +141,6 @@ class Parser(parser.Parser):
         target_width=self._output_size[0],
         target_height=self._output_size[1])  # Final Output Shape
     image = image / 255.  # Normalize
-    label = tf.one_hot(decoded_tensors['image/class/label'], self._num_classes)
-
+    # label = tf.one_hot(decoded_tensors['image/class/label'], self._num_classes)
+    label = decoded_tensors['image/class/label']
     return image, label
