@@ -564,15 +564,15 @@ if __name__ == '__main__':
   # model.set_postprocessor_fn(func)
 
   cap = FastVideo(
-      0,
+      "videos/nyc.mp4",
       model=model,
       process_width=416,
       process_height=416,
-      preprocess_with_gpu=True,
+      preprocess_with_gpu=False,
       print_conf=True,
       max_batch=5,
       disp_h=416,
       scale_que=1,
-      wait_time='dynamic',
+      wait_time= 0.001, #'dynamic',
       policy='mixed_float16')
   cap.run()

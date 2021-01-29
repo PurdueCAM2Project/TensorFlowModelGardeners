@@ -1,0 +1,175 @@
+runtime:
+  all_reduce_alg: null
+  batchnorm_spatial_persistent: false
+  dataset_num_private_threads: null
+  default_shard_dim: -1
+  distribution_strategy: mirrored
+  enable_xla: false
+  gpu_thread_mode: null
+  loss_scale: dynamic
+  mixed_precision_dtype: float16
+  num_cores_per_replica: 1
+  num_gpus: 1
+  num_packs: 1
+  per_gpu_thread_count: 0
+  run_eagerly: false
+  task_index: -1
+  tpu: null
+  worker_hosts: null
+task:
+  annotation_file: null
+  darknet_load_decoder: false
+  gradient_clip_norm: 0.0
+  init_checkpoint: ''
+  load_darknet_weights: true
+  model:
+    _boxes: ['[16.0, 25.0]', '[54.0, 75.0]', '[91.0, 205.0]', '[201.0, 120.0]', '[287.0,
+        310.0]']
+    _input_size: null
+    base:
+      type: null
+    boxes_per_scale: 5
+    decoder_activation: leaky
+    dilate: true
+    filter:
+      anchor_generation_scale: 416
+      class_thresh: 0.45
+      ignore_thresh: 0.7
+      iou_thresh: 0.45
+      loss_type: giou
+      max_boxes: 200
+      use_nms: true
+    max_level: 5
+    min_level: 5
+    norm_activation:
+      activation: mish
+      norm_epsilon: 0.001
+      norm_momentum: 0.99
+      use_sync_bn: false
+    num_classes: 80
+  per_category_metrics: false
+  train_data:
+    block_length: 1
+    cache: false
+    cycle_length: null
+    deterministic: null
+    drop_remainder: true
+    dtype: float16
+    enable_tf_data_service: false
+    global_batch_size: 4
+    input_path: ''
+    is_training: true
+    parser:
+      aug_rand_brightness: true
+      aug_rand_hue: true
+      aug_rand_saturation: true
+      aug_rand_zoom: true
+      fixed_size: true
+      image_h: 416
+      image_w: 416
+      jitter_boxes: 0.005
+      jitter_im: 0.1
+      max_num_instances: 200
+      max_process_size: 608
+      min_process_size: 320
+      net_down_scale: ['(5, 8)']
+      pct_rand: 0.5
+      random_flip: true
+      seed: 10
+      shuffle_buffer_size: 10000
+      use_tie_breaker: true
+    sharding: true
+    shuffle_buffer_size: 10000
+    tf_data_service_address: null
+    tf_data_service_job_name: null
+    tfds_as_supervised: false
+    tfds_data_dir: ''
+    tfds_download: true
+    tfds_name: coco
+    tfds_skip_decoding_feature: ''
+    tfds_split: train
+  validation_data:
+    block_length: 1
+    cache: false
+    cycle_length: null
+    deterministic: null
+    drop_remainder: true
+    dtype: float16
+    enable_tf_data_service: false
+    global_batch_size: 4
+    input_path: ''
+    is_training: false
+    parser:
+      aug_rand_brightness: true
+      aug_rand_hue: true
+      aug_rand_saturation: true
+      aug_rand_zoom: true
+      fixed_size: true
+      image_h: 416
+      image_w: 416
+      jitter_boxes: 0.005
+      jitter_im: 0.1
+      max_num_instances: 200
+      max_process_size: 608
+      min_process_size: 320
+      net_down_scale: ['(5, 8)']
+      pct_rand: 0.5
+      random_flip: true
+      seed: 10
+      shuffle_buffer_size: 10000
+      use_tie_breaker: true
+    sharding: true
+    shuffle_buffer_size: 2
+    tf_data_service_address: null
+    tf_data_service_job_name: null
+    tfds_as_supervised: false
+    tfds_data_dir: ''
+    tfds_download: true
+    tfds_name: coco
+    tfds_skip_decoding_feature: ''
+    tfds_split: validation
+  weight_decay: 0.0005
+trainer:
+  allow_tpu_summary: false
+  best_checkpoint_eval_metric: ''
+  best_checkpoint_export_subdir: ''
+  best_checkpoint_metric_comp: higher
+  checkpoint_interval: 10000
+  continuous_eval_timeout: 3600
+  eval_tf_function: true
+  eval_tf_while_loop: false
+  loss_upper_bound: 1000000.0
+  max_to_keep: 5
+  optimizer_config:
+    ema: null
+    learning_rate:
+      stepwise:
+        boundaries: [6400000, 7200000]
+        name: PiecewiseConstantDecay
+        values: [8.125e-05, 8.125e-06, 8.125e-07]
+      type: stepwise
+    optimizer:
+      sgd:
+        clipnorm: null
+        clipvalue: null
+        decay: 0.0
+        global_clipnorm: null
+        momentum: 0.949
+        name: SGD
+        nesterov: false
+      type: sgd
+    warmup:
+      linear:
+        name: linear
+        warmup_learning_rate: 0
+        warmup_steps: 1000
+      type: linear
+  recovery_begin_steps: 0
+  recovery_max_trials: 0
+  steps_per_loop: 10000
+  summary_interval: 10000
+  train_steps: 8008000
+  train_tf_function: true
+  train_tf_while_loop: true
+  validation_interval: 10000
+  validation_steps: 1000

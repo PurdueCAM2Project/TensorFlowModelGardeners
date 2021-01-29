@@ -364,6 +364,8 @@ class YoloDecoder(tf.keras.Model):
     self._kernel_regularizer = kernel_regularizer
     self._bias_regularizer = bias_regularizer
 
+    self._one_shot = False
+
     self._base_config = dict(
         activation=self._activation,
         use_sync_bn=self._use_sync_bn,
@@ -380,18 +382,44 @@ class YoloDecoder(tf.keras.Model):
         **self._base_config)
 
   def build(self, inputs):
-    if self._embed_fpn:
-      self._fpn = YoloFPN(fpn_path_len=self._fpn_path_len, **self._base_config)
-      self._decoder = YoloFPNDecoder(**self._decoder_config)
+    num_keys = len(inputs.keys())
+    
+    if num_keys != 1:
+      if self._embed_fpn:
+        self._fpn = YoloFPN(fpn_path_len=self._fpn_path_len, **self._base_config)
+        self._decoder = YoloFPNDecoder(**self._decoder_config)
+      else:
+        self._fpn = None
+        self._decoder = YoloRoutedDecoder(**self._decoder_config)
     else:
-      self._fpn = None
-      self._decoder = YoloRoutedDecoder(**self._decoder_config)
+      self._one_shot = True
+      self._oneshot_key = list(inputs.keys())[0]
+      depth = inputs[self._oneshot_key][-1]
+
+      self._decoder = nn_blocks.DarkRouteProcess(
+          filters = depth // 2, 
+          repetitions = self._path_process_len, 
+          insert_spp=self._embed_spp, 
+          activation= self._activation, 
+          use_sync_bn=self._use_sync_bn,
+          norm_momentum=self._norm_momentum,
+          norm_epsilon=self._norm_epsilon,
+          kernel_initializer=self._kernel_initializer,
+          kernel_regularizer=self._kernel_regularizer,
+          bias_regularizer=self._bias_regularizer
+        )
+
     return
 
   def call(self, inputs, training=False):
-    if self._embed_fpn:
-      inputs = self._fpn(inputs)
-    return self._decoder(inputs)
+    
+    if not self._one_shot:
+      if self._embed_fpn:
+        inputs = self._fpn(inputs)
+      return self._decoder(inputs)
+    else:
+      p, retval = self._decoder(inputs[self._oneshot_key])
+      return {self._oneshot_key: retval}
 
   @property
   def neck(self):

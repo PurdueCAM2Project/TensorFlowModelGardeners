@@ -120,8 +120,7 @@ class YoloFPN(tf.keras.Model):
     self.resamples = {}
     self.preprocessors = {}
     self.tails = {}
-    for level, depth in zip(
-        reversed(range(self._min_level, self._max_level + 1)), self._depths):
+    for level, depth in zip(reversed(range(self._min_level, self._max_level + 1)), self._depths):
 
       if level != self._max_level:
         self.resamples[str(level)] = nn_blocks.RouteMerge(

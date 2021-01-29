@@ -367,8 +367,7 @@ class Darknet(ks.Model):
       x = nn_blocks.DarkResidual(
           filters=config.filters // scale_filters,
           filter_scale=residual_filter_scale,
-          **self._default_dict)(
-              x)
+          **self._default_dict)(x)
     
     for i in range(dilated_reps, config.repetitions):
       self._default_dict["dilation_rate"] = self._default_dict["dilation_rate"]//2
@@ -424,8 +423,8 @@ class Darknet(ks.Model):
     self._default_dict['name'] = f"{name}_residual_down"
     if self._dilate:
       self._default_dict["dilation_rate"] = config.dilation_rate
-      if config.repetitions < 8:
-        config.repetitions += 2
+      # if config.repetitions < 8:
+      #   config.repetitions += 2
     else:
       self._default_dict["dilation_rate"] = 1
     

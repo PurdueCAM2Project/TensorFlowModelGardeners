@@ -53,6 +53,10 @@ python3 -m yolo.train --mode=train_and_eval --experiment=darknet_classification 
 '''
 python3 -m yolo.train --mode=train_and_eval --experiment=yolo_v4_coco --model_dir=training_dir --config_file=yolo/configs/experiments/yolov4.yaml
 '''
+
+'''
+python3 -m yolo.train --mode=train_and_eval --experiment=yolo_custom --model_dir=training_dir --config_file=yolo/configs/experiments/yolov4-dilated.yaml
+'''
 def main(_):
   gin.parse_config_files_and_bindings(FLAGS.gin_file, FLAGS.gin_params)
   print(FLAGS.experiment)

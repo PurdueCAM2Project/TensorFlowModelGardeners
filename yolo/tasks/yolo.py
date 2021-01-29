@@ -43,7 +43,7 @@ class YoloTask(base_task.Task):
     l2_weight_decay = self.task_config.weight_decay / 2.0
 
     masks, path_scales, xy_scales = self._get_masks()
-    self._get_boxes(gen_boxes=params.is_training)
+    self._get_boxes(params, masks, gen_boxes=params.is_training)
 
     input_specs = tf.keras.layers.InputSpec(shape=[None] +
                                             model_base_cfg.input_size)
@@ -74,7 +74,16 @@ class YoloTask(base_task.Task):
     model = self.task_config.model
 
     masks, path_scales, xy_scales = self._get_masks()
-    anchors = self._get_boxes(gen_boxes=params.is_training)
+    anchors = self._get_boxes(params, masks, gen_boxes=params.is_training)
+
+    if params.parser.net_down_scale is not None:
+      scales = {}
+      for key in params.parser.net_down_scale:
+        key = key[1:-1].split(",")
+        scales[key[0]] = int(key[1])
+        print(scales)
+    else:
+      scales = None
 
     print(masks, path_scales, xy_scales)
     parser = yolo_input.Parser(
@@ -91,6 +100,7 @@ class YoloTask(base_task.Task):
         min_process_size=params.parser.min_process_size,
         max_process_size=params.parser.max_process_size,
         max_num_instances=params.parser.max_num_instances,
+        net_down_scale=scales, 
         random_flip=params.parser.random_flip,
         pct_rand=params.parser.pct_rand,
         seed=params.parser.seed,
@@ -228,7 +238,7 @@ class YoloTask(base_task.Task):
   def anchors(self):
     return self.task_config.model.boxes
 
-  def _get_boxes(self, gen_boxes=True):
+  def _get_boxes(self, params, masks, gen_boxes=True):
     # gen_boxes = params.is_training
     if gen_boxes and self.task_config.model.boxes == None and not self._anchors_built:
       # must save the boxes!
@@ -241,8 +251,13 @@ class YoloTask(base_task.Task):
           dataset_fn=tf.data.TFRecordDataset,
           decoder_fn=decoder.decode,
           parser_fn=None)
+
+      k = 0 
+      for key in masks.keys():
+        k += len(masks[key])
+
       anchors = reader.read(
-          k=9, image_width=params.parser.image_w, input_context=input_context)
+          k=k, image_width=params.parser.image_w, input_context=None)
       self.task_config.model.set_boxes(anchors)
       self._anchors_built = True
       del reader

@@ -32,6 +32,7 @@ class Parser(parser.Parser):
                max_num_instances=200,
                random_flip=True,
                pct_rand=0.5,
+               net_down_scale = None, 
                aug_rand_saturation=True,
                aug_rand_brightness=True,
                aug_rand_zoom=True,
@@ -68,7 +69,15 @@ class Parser(parser.Parser):
       anchors: a `Tensor`, `List` or `numpy.ndarrray` for bounding box priors.
       seed: an `int` for the seed used by tf.random
     """
-    self._net_down_scale = 2**max_level
+    if net_down_scale == None:
+      self._net_down_scale = 2**max_level
+      self._scales = {key: 2 ** int(key) for key in masks.keys()}
+    else:
+      self._net_down_scale = net_down_scale[str(max_level)]
+      self._scales = net_down_scale
+
+    self._masks = {key: tf.convert_to_tensor(value) for key, value in masks.items()}
+
 
     self._num_classes = num_classes
     self._image_w = (image_w // self._net_down_scale) * self._net_down_scale
@@ -80,9 +89,7 @@ class Parser(parser.Parser):
     self._fixed_size = fixed_size
 
     self._anchors = anchors
-    self._masks = {
-        key: tf.convert_to_tensor(value) for key, value in masks.items()
-    }
+    
     self._use_tie_breaker = use_tie_breaker
 
     self._jitter_im = 0.0 if jitter_im is None else jitter_im
@@ -114,11 +121,11 @@ class Parser(parser.Parser):
     for key in self._masks.keys():
       if not batch:
         mask[key] = preprocessing_ops.build_grided_gt(
-            raw_true, self._masks[key], width // 2**int(key), self._num_classes,
+            raw_true, self._masks[key], width // self._scales[key], self._num_classes,
             raw_true['bbox'].dtype, use_tie_breaker)
       else:
         mask[key] = preprocessing_ops.build_batch_grided_gt(
-            raw_true, self._masks[key], width // 2**int(key), self._num_classes,
+            raw_true, self._masks[key], width // self._scales[key], self._num_classes,
             raw_true['bbox'].dtype, use_tie_breaker)
 
       mask[key] = tf.cast(mask[key], self._dtype)

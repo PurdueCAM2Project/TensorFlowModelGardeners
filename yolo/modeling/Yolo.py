@@ -27,6 +27,7 @@ class Yolo(ks.Model):
   def build(self, input_shape):
     self._backbone.build(input_shape)
     nshape = self._backbone.output_shape
+
     self._decoder.build(nshape)
     super().build(input_shape)
     return
