@@ -9,6 +9,7 @@ saved_models/*.tflite
 v4tiny_logs
 yolov4-logs
 yolov4-eval
+*.zip
 
 
 # lfs safe in case the demo is run and someone tries to push
