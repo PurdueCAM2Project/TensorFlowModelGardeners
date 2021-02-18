@@ -52,9 +52,9 @@ Our goal with this model conversion is to provide highly versatile implementatio
 | :--------------: | :--------------: |
 | Yolo-v3          | Darknet53        |
 | Yolo-v3 tiny     | CSPDarknet53     |
-| Yolo-v3 spp      |
-| Yolo-v4          |
-| Yolo-v4 tiny     |
+| Yolo-v3 spp      | Darknet53        |
+| Yolo-v4          | CSPDarknet53     |
+| Yolo-v4 tiny     | CSPDarknet53     |
 
 For all Standard implementations, we provided scripts to load the weights into the Tensorflow implementation directly from the original Darknet Implementation, provided that you have a yolo**.cfg file, and the corresponding yolo**.weights file.
 
@@ -91,14 +91,16 @@ The Data Pipeline is found within the dataloaders folder. The way to use our dat
 |:------------:|:------------:|:----------:|:-------------------:|:----------------:|  
 | Yolov3 | 416 |35ms     | 40        | 59.7% |  
 | Yolov3-spp | 608 |40ms     | 30        | 61.7% |
-| Yolov3-tiny | 416 |20ms     | 60        | not tested yet |    
+| Yolov3-tiny | 416 |20ms     | 60        | not tested yet |   
+| Yolov4 | 416 |--ms     | 60        | not tested yet |  
 
 
 > ### Image Classification  
 >  
 > | Model name | Download | Top 1 Accuracy | Top 5 Accuracy |  
 > |------------|----------|----------------|----------------|  
-> | Model name | [Checkpoint](https://drive.google.com/...), [SavedModel](https://tfhub.dev/...) | xx% | xx% |  
+> | Yolov3 | [Checkpoint](https://drive.google.com/...), [SavedModel](https://tfhub.dev/...) | 70% | 90% |  
+> | Yolov4 | [Checkpoint](https://drive.google.com/...), [SavedModel](https://tfhub.dev/...) | 70% | 90% |  
 
 ## Requirements
 
@@ -116,6 +118,11 @@ To install requirements:
 ```setup
 pip install -r requirements.txt
 ```
+## Dataset 
+Pertenent datasets utilized:
+**COCO** - large-scale object detection, segmentation, and captioning data set of images, labels, and corresponding bounding boxes
+**IMAGENET** - 100K images without labels
+**VOC** - set of images that each contain annotated objects out of 20 different classes
 
 ## Build Instructions
 
@@ -144,14 +151,36 @@ model.summary()
 >  
 > * Provide details for preprocessing, hyperparameters, random seeds, and environment.  
 > * Provide a command line example for training.  
+# Preprocessing
 
-Please run this command line for training.
+Prior to training the data, the images and their corresponding bounding boxes go through a series of preprocessing steps:
+    **Random Flip** - Images and corresponding bounding boxes are reflected horizontally 
+    **Random Crop** - Create subset of image
+    **Padding** -  Images padded to be target size
+    **Random Scale** - Images scaled to new dimensions
+    **Random Zoom** - Augment training with zoomed images
+    **Gaussian Noise** - Additive noise applied to images
+    **Letterbox** - Images rescaled with added borders to achieve certain dimension while preserving aspect ratio
+    **Mosaic** - Set of 4 images combined into one with different ratios 
+    **CutMix** - Random patches cut and pasted from input images (used in classification not detection)
+    **Random Translation** - Images randomly translated during training
+    **Random Jitter** - Applied to images and boxes - random shift and scale
+    **Aspect Ratio** - Preserved within the image
+    **Data Augmentation** - the following data augmentation steps are applied according to hyperparameters: 
+        _Random Saturation, Random Brightness, Random Zoom, Random Rotate, Random Hue, _and_ Random Aspect_
 
-```python
+# Hyperparameters
 
+Config Parameters are taken when building the object detection model, including - 
+_    Model, Training Data, Validation Data, Batch Sizes, Training and Validation Steps, Optimizer function [momentum, decay, learning rate], Training Restrictions_ 
+
+Please run this command line for training. 
+
+```shell
+python3 -m yolo.train --mode=train_and_eval --experiment=darknet_classification --model_dir=training_dir --config_file=yolo/configs/experiments/darknet53.yaml
 ```
 ```shell
-python3 ...
+python3 -m yolo.train --mode=train_and_eval --experiment=yolo_custom --model_dir=training_dir --config_file=yolo/configs/experiments/yolov4.yaml
 ```
 
 ## Evaluation
@@ -161,10 +190,21 @@ python3 ...
 > * Describe data preprocessing / postprocessing steps.  
 > * Provide a command line example for evaluation.  
 
+# Data Processing
+
+**Preprocessing** during evaluation consists of:
+    _Letterbox_ - Images rescaled with added borders to achieve certain dimension while preserving aspect ratio
+**Postprocessing** steps includes:
+    _Scaling_ - apply to the output image and update the corresponding grid
+    _Non-maximal Suppression (NMS)_ - filter bounding boxes based on response quality
+
 Please run this command line for evaluation.
 
 ```shell
-python3 ...
+python3 -m yolo.train --mode=eval --experiment=darknet_classification --model_dir=training_dir --config_file=yolo/configs/experiments/darknet53.yaml
+```
+```shell
+python3 -m yolo.train --mode=eval --experiment=yolo_custom --model_dir=training_dir --config_file=yolo/configs/experiments/yolov4.yaml
 ```
 
 ## Change Log
@@ -174,6 +214,9 @@ python3 ...
 ## References
 
 > :memo: Provide links to references.  
+
+[1] YOLO v3: Joseph Redmon and Ali Farhadi. Yolov3: An incremental improvement. arXiv preprint arXiv:1804.02767, 2018. (https://arxiv.org/pdf/1804.02767.pdf)
+[2] YOLO v4: Alexey Bochkovskiy, Chien-Yao Wang, and HongYuan Mark Liao. Yolov4: Optimal speed and accuracy of object detection. arXiv preprint arXiv:2004.10934, 2020. (https://arxiv.org/pdf/2004.10934.pdf)
 
 ## License
 
