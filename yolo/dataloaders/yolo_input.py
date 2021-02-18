@@ -368,7 +368,7 @@ class Parser(parser.Parser):
     return image, labels
 
   def _postprocess_fn(self, image, label):
-
+    '''
     if self._cutmix:
       batch_size = tf.shape(image)[0]
       if batch_size >= 1:
@@ -390,31 +390,8 @@ class Parser(parser.Parser):
                                            self._max_num_instances,
                                            pad_axis=-1,
                                            pad_value=-1)
-
-    randscale = self._image_w // self._net_down_scale
-    if not self._fixed_size:
-      do_scale = tf.greater(
-          tf.random.uniform([], minval=0, maxval=1, seed=self._seed),
-          1 - self._pct_rand)
-      if do_scale:
-        randscale = tf.random.uniform([],
-                                      minval=10,
-                                      maxval=21,
-                                      seed=self._seed,
-                                      dtype=tf.int32)
-    width = randscale * self._net_down_scale
-    image = tf.image.resize(image, (width, width))
-
-    label['bbox'] = box_utils.yxyx_to_xcycwh(label['bbox'])
-    best_anchors = preprocessing_ops.get_best_anchor_batch(
-        label['bbox'], self._anchors, width=self._image_w, height=self._image_h)
-    label['best_anchors'] = pad_max_instances(
-        best_anchors, self._max_num_instances, pad_axis=-2, pad_value=0)
-
-    grid = self._build_grid(
-        label, width, batch=True, use_tie_breaker=self._use_tie_breaker)
-    label.update({'grid_form': grid})
-    label['bbox'] = box_utils.xcycwh_to_yxyx(label['bbox'])
+    '''
+  
     return image, label
 
   def postprocess_fn(self, is_training):

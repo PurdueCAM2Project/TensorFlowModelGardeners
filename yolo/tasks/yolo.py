@@ -9,7 +9,7 @@ from yolo.configs import yolo as exp_cfg
 
 from official.vision.beta.evaluation import coco_evaluator
 
-from yolo.dataloaders import yolo_input
+from yolo.dataloaders import yolo_input, yolo_batch_input
 from yolo.dataloaders.decoders import tfds_coco_decoder
 from yolo.ops.kmeans_anchors import BoxGenInputReader
 from yolo.ops.box_ops import xcycwh_to_yxyx
@@ -112,6 +112,32 @@ class YoloTask(base_task.Task):
         aug_rand_hue=params.parser.aug_rand_hue,
         anchors=anchors,
         dtype=params.dtype)
+    
+    batch_parser = yolo_batch_input.Parser(image_w=params.parser.image_w,
+                                          image_h=params.parser.image_h,
+                                          num_classes=model.num_classes,
+                                          min_level=model.min_level,
+                                          max_level=model.max_level,
+                                          fixed_size=params.parser.fixed_size,
+                                          jitter_im=params.parser.jitter_im,
+                                          jitter_boxes=params.parser.jitter_boxes,
+                                          masks=masks,
+                                          letter_box=params.parser.letter_box,
+                                          cutmix=params.parser.cutmix,
+                                          mosaic=params.parser.mosaic, 
+                                          use_tie_breaker=params.parser.use_tie_breaker,
+                                          min_process_size=params.parser.min_process_size,
+                                          max_process_size=params.parser.max_process_size,
+                                          max_num_instances=params.parser.max_num_instances,
+                                          random_flip=params.parser.random_flip,
+                                          pct_rand=params.parser.pct_rand,
+                                          seed=params.parser.seed,
+                                          aug_rand_saturation=params.parser.aug_rand_saturation,
+                                          aug_rand_brightness=params.parser.aug_rand_brightness,
+                                          aug_rand_zoom=params.parser.aug_rand_zoom,
+                                          aug_rand_hue=params.parser.aug_rand_hue,
+                                          anchors=anchors,
+                                          dtype=params.dtype)
 
     reader = input_reader.InputReader(
         params,
@@ -120,6 +146,13 @@ class YoloTask(base_task.Task):
         parser_fn=parser.parse_fn(params.is_training),
         postprocess_fn=parser.postprocess_fn(params.is_training))
     dataset = reader.read(input_context=input_context)
+
+    dataset = dataset.unbatch()
+    dataset = dataset.batch(4)
+
+    map_fn = batch_parser.parse_train_data if params.is_training else batch_parser.parse_eval_data
+    dataset = dataset.map(map_fn)
+    
     return dataset
 
   def build_losses(self, outputs, labels, aux_losses=None):
