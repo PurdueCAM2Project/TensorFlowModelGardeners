@@ -25,7 +25,6 @@ class YoloTask(base_task.Task):
   loading/iterating over Datasets, initializing the model, calculating the loss,
   post-processing, and customized metrics with reduction.
   """
-
   def __init__(self, params, logging_dir: str = None):
     super().__init__(params, logging_dir)
     self._loss_dict = None
@@ -39,7 +38,7 @@ class YoloTask(base_task.Task):
     self.coco_metric = None
     self._metric_names = []
     self._metrics = []
-  
+
     return
 
   def build_model(self):
@@ -54,8 +53,8 @@ class YoloTask(base_task.Task):
 
     input_specs = tf.keras.layers.InputSpec(shape=[None] +
                                             model_base_cfg.input_size)
-    l2_regularizer = (
-        tf.keras.regularizers.l2(l2_weight_decay) if l2_weight_decay else None)
+    l2_regularizer = (tf.keras.regularizers.l2(l2_weight_decay)
+                      if l2_weight_decay else None)
 
     model, losses = build_yolo(input_specs, model_base_cfg, l2_regularizer,
                                masks, xy_scales, path_scales)
@@ -98,7 +97,7 @@ class YoloTask(base_task.Task):
         masks=masks,
         letter_box=params.parser.letter_box,
         cutmix=params.parser.cutmix,
-        mosaic=params.parser.mosaic, 
+        mosaic=params.parser.mosaic,
         use_tie_breaker=params.parser.use_tie_breaker,
         min_process_size=params.parser.min_process_size,
         max_process_size=params.parser.max_process_size,
@@ -112,32 +111,23 @@ class YoloTask(base_task.Task):
         aug_rand_hue=params.parser.aug_rand_hue,
         anchors=anchors,
         dtype=params.dtype)
-    
-    batch_parser = yolo_batch_input.Parser(image_w=params.parser.image_w,
-                                          image_h=params.parser.image_h,
-                                          num_classes=model.num_classes,
-                                          min_level=model.min_level,
-                                          max_level=model.max_level,
-                                          fixed_size=params.parser.fixed_size,
-                                          jitter_im=params.parser.jitter_im,
-                                          jitter_boxes=params.parser.jitter_boxes,
-                                          masks=masks,
-                                          letter_box=params.parser.letter_box,
-                                          cutmix=params.parser.cutmix,
-                                          mosaic=params.parser.mosaic, 
-                                          use_tie_breaker=params.parser.use_tie_breaker,
-                                          min_process_size=params.parser.min_process_size,
-                                          max_process_size=params.parser.max_process_size,
-                                          max_num_instances=params.parser.max_num_instances,
-                                          random_flip=params.parser.random_flip,
-                                          pct_rand=params.parser.pct_rand,
-                                          seed=params.parser.seed,
-                                          aug_rand_saturation=params.parser.aug_rand_saturation,
-                                          aug_rand_brightness=params.parser.aug_rand_brightness,
-                                          aug_rand_zoom=params.parser.aug_rand_zoom,
-                                          aug_rand_hue=params.parser.aug_rand_hue,
-                                          anchors=anchors,
-                                          dtype=params.dtype)
+
+    batch_parser = yolo_batch_input.Parser(
+        image_w=params.parser.image_w,
+        image_h=params.parser.image_h,
+        num_classes=model.num_classes,
+        min_level=model.min_level,
+        max_level=model.max_level,
+        fixed_size=params.parser.fixed_size,
+        masks=masks,
+        cutmix=params.parser.cutmix,
+        mosaic=params.parser.mosaic,
+        use_tie_breaker=params.parser.use_tie_breaker,
+        max_num_instances=params.parser.max_num_instances,
+        pct_rand=params.parser.pct_rand,
+        seed=params.parser.seed,
+        anchors=anchors,
+        dtype=params.dtype)
 
     reader = input_reader.InputReader(
         params,
@@ -152,7 +142,7 @@ class YoloTask(base_task.Task):
 
     map_fn = batch_parser.parse_train_data if params.is_training else batch_parser.parse_eval_data
     dataset = dataset.map(map_fn)
-    
+
     return dataset
 
   def build_losses(self, outputs, labels, aux_losses=None):
@@ -219,8 +209,8 @@ class YoloTask(base_task.Task):
     if isinstance(optimizer, mixed_precision.LossScaleOptimizer):
       gradients = optimizer.get_unscaled_gradients(gradients)
     if self.task_config.gradient_clip_norm > 0.0:
-      gradients, _ = tf.clip_by_global_norm(gradients,
-                                            self.task_config.gradient_clip_norm)
+      gradients, _ = tf.clip_by_global_norm(
+          gradients, self.task_config.gradient_clip_norm)
     optimizer.apply_gradients(zip(gradients, train_vars))
 
     # custom metrics
@@ -256,16 +246,16 @@ class YoloTask(base_task.Task):
 
     coco_model_outputs = {
         'detection_boxes':
-            box_ops.denormalize_boxes(
-                tf.cast(y_pred['bbox'], tf.float32), image_shape),
+        box_ops.denormalize_boxes(tf.cast(y_pred['bbox'], tf.float32),
+                                  image_shape),
         'detection_scores':
-            y_pred['confidence'],
+        y_pred['confidence'],
         'detection_classes':
-            y_pred['classes'],
+        y_pred['classes'],
         'num_detections':
-            tf.shape(y_pred['bbox'])[:-1],
+        tf.shape(y_pred['bbox'])[:-1],
         'source_id':
-            label['source_id'],
+        label['source_id'],
     }
 
     logs.update({self.coco_metric.name: (label, coco_model_outputs)})
@@ -304,13 +294,13 @@ class YoloTask(base_task.Task):
       self._num_boxes = (model_base_cfg.max_level - model_base_cfg.min_level +
                          1) * model_base_cfg.boxes_per_scale
       decoder = tfds_coco_decoder.MSCOCODecoder()
-      reader = BoxGenInputReader(
-          params,
-          dataset_fn=tf.data.TFRecordDataset,
-          decoder_fn=decoder.decode,
-          parser_fn=None)
-      anchors = reader.read(
-          k=9, image_width=params.parser.image_w, input_context=input_context)
+      reader = BoxGenInputReader(params,
+                                 dataset_fn=tf.data.TFRecordDataset,
+                                 decoder_fn=decoder.decode,
+                                 parser_fn=None)
+      anchors = reader.read(k=9,
+                            image_width=params.parser.image_w,
+                            input_context=input_context)
       self.task_config.model.set_boxes(anchors)
       self._anchors_built = True
       del reader
