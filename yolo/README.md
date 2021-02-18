@@ -167,7 +167,7 @@ Prior to training the data, the images and their corresponding bounding boxes go
 * **Random Jitter** - Applied to images and boxes - random shift and scale
 * **Aspect Ratio** - Preserved within the image
 * **Data Augmentation** - the following data augmentation steps are applied according to hyperparameters: 
-* _Random Saturation, Random Brightness, Random Zoom, Random Rotate, Random Hue, _and_ Random Aspect_
+   - Random _Saturation_, Random _Brightness_, Random _Zoom_, Random _Rotate_, Random _Hue_, and Random _Aspect_
 
 ### Hyperparameters
 
@@ -183,10 +183,12 @@ Config Parameters are taken when building the object detection model, including:
 Please run this command line for training. 
 
 ```shell
-python3 -m yolo.train --mode=train_and_eval --experiment=darknet_classification --model_dir=training_dir --config_file=yolo/configs/experiments/darknet53.yaml
+python3 -m yolo.train --mode=train_and_eval --experiment=darknet_classification --model_dir=training_dir 
+--config_file=yolo/configs/experiments/darknet53.yaml
 ```
 ```shell
-python3 -m yolo.train --mode=train_and_eval --experiment=yolo_custom --model_dir=training_dir --config_file=yolo/configs/experiments/yolov4.yaml
+python3 -m yolo.train --mode=train_and_eval --experiment=yolo_custom --model_dir=training_dir 
+--config_file=yolo/configs/experiments/yolov4.yaml
 ```
 
 ## Evaluation
@@ -208,10 +210,12 @@ python3 -m yolo.train --mode=train_and_eval --experiment=yolo_custom --model_dir
 Please run this command line for evaluation.
 
 ```shell
-python3 -m yolo.train --mode=eval --experiment=darknet_classification --model_dir=training_dir --config_file=yolo/configs/experiments/darknet53.yaml
+python3 -m yolo.train --mode=eval --experiment=darknet_classification --model_dir=training_dir 
+--config_file=yolo/configs/experiments/darknet53.yaml
 ```
 ```shell
-python3 -m yolo.train --mode=eval --experiment=yolo_custom --model_dir=training_dir --config_file=yolo/configs/experiments/yolov4.yaml
+python3 -m yolo.train --mode=eval --experiment=yolo_custom --model_dir=training_dir 
+--config_file=yolo/configs/experiments/yolov4.yaml
 ```
 
 ## Change Log
