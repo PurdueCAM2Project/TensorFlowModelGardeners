@@ -168,8 +168,8 @@ class Parser(hyperparams.Config):
 class DataConfig(cfg.DataConfig):
   """Input config for training."""
   input_path: str = ''
-  tfds_name: str = 'coco'
-  tfds_split: str = 'train'
+  tfds_name: str = 'voc'
+  tfds_split: str = 'train[0:1]'
   global_batch_size: int = 32
   is_training: bool = True
   dtype: str = 'float16'
@@ -212,9 +212,9 @@ class YoloLossLayer(hyperparams.Config):
 class YoloBase(hyperparams.OneOfConfig):
   backbone: backbones.Backbone = backbones.Backbone(
       type='darknet', darknet=backbones.DarkNet(model_id='cspdarknet53'))
-  decoder: YoloDecoder = YoloDecoder(version='v3', type='regular')
-  darknet_weights_file: str = 'yolov3.weights'
-  darknet_weights_cfg: str = 'yolov3.cfg'
+  decoder: YoloDecoder = YoloDecoder(version='v4', type='regular')
+  darknet_weights_file: str = 'cache/yolov4.weights'
+  darknet_weights_cfg: str = 'cache/yolov4.cfg'
 
 
 @dataclasses.dataclass

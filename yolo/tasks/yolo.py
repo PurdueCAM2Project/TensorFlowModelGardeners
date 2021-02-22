@@ -235,6 +235,8 @@ class YoloTask(base_task.Task):
     logs = {'loss': loss}
     # loss_metrics.update(metrics)
     loss_metrics['darknet_loss'] = loss_val
+    for key, metric in loss_metrics.items():
+      print(f"{key}: {metric}")
     image_shape = tf.shape(image)[1:-1]
 
     label['boxes'] = box_ops.denormalize_boxes(
