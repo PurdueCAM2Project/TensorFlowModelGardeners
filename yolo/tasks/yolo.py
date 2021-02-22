@@ -60,7 +60,7 @@ class YoloTask(base_task.Task):
     model, losses = build_yolo(input_specs, model_base_cfg, l2_regularizer,
                                masks, xy_scales, path_scales)
     self._loss_dict = losses
-    model.summary()
+    # model.summary()
     return model
 
   def build_inputs(self, params, input_context=None):
