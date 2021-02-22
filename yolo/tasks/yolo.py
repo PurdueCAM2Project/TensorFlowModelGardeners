@@ -60,6 +60,7 @@ class YoloTask(base_task.Task):
     model, losses = build_yolo(input_specs, model_base_cfg, l2_regularizer,
                                masks, xy_scales, path_scales)
     self._loss_dict = losses
+    model.summary()
     return model
 
   def build_inputs(self, params, input_context=None):
@@ -396,10 +397,10 @@ class YoloTask(base_task.Task):
       #model.backbone.trainable = False
 
       if self.task_config.darknet_load_decoder:
-        if neck is not None:
-          load_weights_neck(model.decoder.neck, neck)
-          #model.decoder.neck.trainable = False
-        cfgheads = load_head(model.decoder.head, decoder)
+        # if neck is not None:
+        #   load_weights_neck(model.decoder, neck)
+        #   #model.decoder.neck.trainable = False
+        cfgheads = load_head(model.decoder, decoder)
         #model.decoder.head.trainable = False
         load_weights_prediction_layers(cfgheads, model.head)
         #model.head.trainable = False

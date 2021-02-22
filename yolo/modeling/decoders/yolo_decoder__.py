@@ -72,9 +72,10 @@ class FPNTail(tf.keras.layers.Layer):
 
 
 @tf.keras.utils.register_keras_serializable(package="yolo")
-class YoloFPN(tf.keras.layers.Layer):
+class YoloFPN(tf.keras.Model):
 
   def __init__(self,
+               input_specs,
                fpn_path_len=4,
                activation="leaky",
                use_sync_bn=False,
@@ -108,24 +109,35 @@ class YoloFPN(tf.keras.layers.Layer):
         norm_epsilon=self._norm_epsilon,
         norm_momentum=self._norm_momentum)
 
+    inputs = {key: tf.keras.layers.Input(shape = value[1:]) for key, value in input_specs.items()}
+    keys = [int(key) for key in input_specs.keys()]
+ 
+    self._min_level = min(keys)
+    self._max_level = max(keys)
+    self._min_depth = input_specs[str(self._min_level)][-1]
+    self._depths = self.get_raw_depths(self._min_depth)
+    self.resamples = {}
+    self.preprocessors = {}
+    self.tails = {}
+
+    self.build_components(inputs)
+    outputs = self.call_components(inputs)
+    self._output_shapes = {key: value.shape for key, value in outputs.items()}
+    super().__init__(inputs=inputs, outputs=outputs, name='YoloFPN')
+
+  @property
+  def output_shapes(self):
+    return self._output_shapes
+
   def get_raw_depths(self, minimum_depth):
     depths = []
     for _ in range(self._min_level, self._max_level + 1):
       depths.append(minimum_depth)
       minimum_depth *= 2
+    print(depths)
     return list(reversed(depths))
 
-  def build(self, inputs):
-    """ use config dictionary to generate all important attributes for head construction """
-    keys = [int(key) for key in inputs.keys()]
-    self._min_level = min(keys)
-    self._max_level = max(keys)
-    self._min_depth = inputs[str(self._min_level)][-1]
-    self._depths = self.get_raw_depths(self._min_depth)
-
-    self.resamples = {}
-    self.preprocessors = {}
-    self.tails = {}
+  def build_components(self, inputs):
     for level, depth in zip(
         reversed(range(self._min_level, self._max_level + 1)), self._depths):
 
@@ -151,7 +163,7 @@ class YoloFPN(tf.keras.layers.Layer):
             filters=depth, upsample=True, **self._base_config)
     return
 
-  def call(self, inputs, training=False):
+  def call_components(self, inputs):
     outputs = {}
     layer_in = inputs[str(self._max_level)]
     for level in reversed(range(self._min_level, self._max_level + 1)):
@@ -167,7 +179,7 @@ class YoloFPN(tf.keras.layers.Layer):
 
 
 @tf.keras.utils.register_keras_serializable(package="yolo")
-class YoloRoutedDecoder(tf.keras.layers.Layer):
+class YoloRoutedDecoder(tf.keras.Model):
 
   def __init__(self,
                path_process_len=6,
@@ -182,7 +194,7 @@ class YoloRoutedDecoder(tf.keras.layers.Layer):
                bias_regularizer=None,
                subdivisions = 8, 
                **kwargs):
-    super().__init__(**kwargs)
+    # super().__init__(**kwargs)
     self._max_level_process_len = path_process_len if max_level_process_len is None else max_level_process_len
     self._path_process_len = path_process_len
     self._embed_spp = embed_spp
@@ -205,18 +217,33 @@ class YoloRoutedDecoder(tf.keras.layers.Layer):
         subdivisions = self._subdivisions, 
         norm_epsilon=self._norm_epsilon,
         norm_momentum=self._norm_momentum)
-
-  def build(self, inputs):
+    
+    inputs = {key: tf.keras.layers.Input(shape = value[1:]) for key, value in input_specs.items()}
     keys = [int(key) for key in inputs.keys()]
     self._min_level = min(keys)
     self._max_level = max(keys)
-    self._min_depth = inputs[str(self._min_level)][-1]
+    self._min_depth = input_specs[str(self._min_level)][-1]
     self._depths = self.get_raw_depths(self._min_depth)
-
     self.resamples = {}
     self.preprocessors = {}
-    self.outputs = {}
 
+    self.build_components(inputs)
+    outputs = self.call_components(inputs)
+    self._output_shapes = {key: value.shape for key, value in outputs.items()}
+    super().__init__(inputs=inputs, outputs=output, name='YoloRoutedDecoder')
+
+  @property
+  def output_shapes(self):
+    return self._output_shapes
+
+  def get_raw_depths(self, minimum_depth):
+    depths = []
+    for _ in range(self._min_level, self._max_level + 1):
+      depths.append(minimum_depth)
+      minimum_depth *= 2
+    return list(reversed(depths))
+
+  def build_components(self, inputs):
     for level, depth in zip(
         reversed(range(self._min_level, self._max_level + 1)), self._depths):
       if level == self._max_level:
@@ -234,17 +261,9 @@ class YoloRoutedDecoder(tf.keras.layers.Layer):
             repetitions=self._path_process_len,
             insert_spp=False,
             **self._base_config)
-            
     return
 
-  def get_raw_depths(self, minimum_depth):
-    depths = []
-    for _ in range(self._min_level, self._max_level + 1):
-      depths.append(minimum_depth)
-      minimum_depth *= 2
-    return list(reversed(depths))
-
-  def call(self, inputs, training=False):
+  def call_components(self, inputs, training=False):
     outputs = dict()
     layer_in = inputs[str(self._max_level)]
     for level in reversed(range(self._min_level, self._max_level + 1)):
@@ -257,9 +276,10 @@ class YoloRoutedDecoder(tf.keras.layers.Layer):
 
 
 @tf.keras.utils.register_keras_serializable(package="yolo")
-class YoloFPNDecoder(tf.keras.layers.Layer):
+class YoloFPNDecoder(tf.keras.Model):
 
   def __init__(self,
+               input_specs, 
                path_process_len=6,
                max_level_process_len=None,
                embed_spp=False,
@@ -297,6 +317,25 @@ class YoloFPNDecoder(tf.keras.layers.Layer):
         norm_epsilon=self._norm_epsilon,
         norm_momentum=self._norm_momentum)
 
+    inputs = {key: tf.keras.layers.Input(shape = value[1:]) for key, value in input_specs.items()}
+    keys = [int(key) for key in inputs.keys()]
+    print(inputs)
+    self._min_level = min(keys)
+    self._max_level = max(keys)
+    self._min_depth = input_specs[str(self._min_level)][-1]
+    self._depths = self.get_raw_depths(self._min_depth)
+    self.resamples = {}
+    self.preprocessors = {}
+
+    self.build_components(inputs)
+    outputs = self.call_components(inputs)
+    self._output_shapes = {key: value.shape for key, value in outputs.items()}
+    super().__init__(inputs=inputs, outputs=outputs, name='YoloFPNDecdoer')
+
+  @property
+  def output_shapes(self):
+    return self._output_shapes
+
   def get_raw_depths(self, minimum_depth):
     depths = []
     for _ in range(self._min_level, self._max_level + 1):
@@ -304,18 +343,7 @@ class YoloFPNDecoder(tf.keras.layers.Layer):
       minimum_depth *= 2
     return depths
 
-  def build(self, inputs):
-    keys = [int(key) for key in inputs.keys()]
-    print(inputs)
-    self._min_level = min(keys)
-    self._max_level = max(keys)
-    self._min_depth = inputs[str(self._min_level)][-1]
-    self._depths = self.get_raw_depths(self._min_depth)
-
-    self.resamples = {}
-    self.preprocessors = {}
-    self.outputs = {}
-
+  def build_components(self, inputs):
     for level, depth in zip(
         range(self._min_level, self._max_level + 1), self._depths):
       if level == self._min_level:
@@ -334,11 +362,7 @@ class YoloFPNDecoder(tf.keras.layers.Layer):
             insert_spp=False,
             **self._base_config)
 
-    inputs_ = {key: tf.keras.Input(shape = value[1:]) for key, value in inputs.items()}
-    self.call(inputs_)
-    # print(inputs_)
-
-  def call(self, inputs, training=False):
+  def call_components(self, inputs):
     outputs = dict()
     layer_in = inputs[str(self._min_level)]
     for level in range(self._min_level, self._max_level + 1):
@@ -369,7 +393,7 @@ class YoloDecoder(tf.keras.Model):
                bias_regularizer=None,
                subdivisions = 8, 
                **kwargs):
-    # super().__init__(**kwargs)
+    super().__init__(**kwargs)
     self._embed_fpn = embed_fpn
     self._fpn_path_len = fpn_path_len
     self._path_process_len = path_process_len
@@ -401,14 +425,32 @@ class YoloDecoder(tf.keras.Model):
         embed_spp=self._embed_spp,
         **self._base_config)
 
-    inputs = {key: tf.keras.layers.Input(shape = value[1:]) for key, value in input_specs.items()}
-    if self._embed_fpn:
-      inter_outs = YoloFPN(fpn_path_len=self._fpn_path_len, **self._base_config)(inputs)
-      outputs = YoloFPNDecoder(**self._decoder_config)(inter_outs)
-    else:
-      outputs = YoloRoutedDecoder(**self._decoder_config)(inputs)
 
-    super().__init__(inputs=inputs, outputs=outputs, name='YoloDecoder')
+  # def build(self, inputs):
+    if self._embed_fpn:
+      self._fpn = YoloFPN(input_specs, fpn_path_len=self._fpn_path_len, **self._base_config)
+      self._decoder = YoloFPNDecoder(self._fpn.output_shape, **self._decoder_config)
+    else:
+      self._fpn = None
+      self._decoder = YoloRoutedDecoder(input_specs, **self._decoder_config)
+    
+    self.build(input_specs)
+    return
+
+  def fpn(self):
+    return
+  
+  def fpn_decoder(self):
+    return 
+  
+  def routed_decoder(self):
+    return
+
+
+  def call(self, inputs, training=False):
+    if self._embed_fpn:
+      inputs = self._fpn(inputs)
+    return self._decoder(inputs)
 
   @property
   def neck(self):

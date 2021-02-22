@@ -72,7 +72,7 @@ class FPNTail(tf.keras.layers.Layer):
 
 
 @tf.keras.utils.register_keras_serializable(package="yolo")
-class YoloFPN(tf.keras.layers.Layer):
+class YoloFPN(tf.keras.Model):
 
   def __init__(self,
                fpn_path_len=4,
@@ -167,7 +167,7 @@ class YoloFPN(tf.keras.layers.Layer):
 
 
 @tf.keras.utils.register_keras_serializable(package="yolo")
-class YoloRoutedDecoder(tf.keras.layers.Layer):
+class YoloRoutedDecoder(tf.keras.Model):
 
   def __init__(self,
                path_process_len=6,
@@ -257,7 +257,7 @@ class YoloRoutedDecoder(tf.keras.layers.Layer):
 
 
 @tf.keras.utils.register_keras_serializable(package="yolo")
-class YoloFPNDecoder(tf.keras.layers.Layer):
+class YoloFPNDecoder(tf.keras.Model):
 
   def __init__(self,
                path_process_len=6,
@@ -354,7 +354,6 @@ class YoloFPNDecoder(tf.keras.layers.Layer):
 class YoloDecoder(tf.keras.Model):
 
   def __init__(self,
-               input_specs, 
                embed_fpn=False,
                fpn_path_len=4,
                path_process_len=6,
@@ -369,7 +368,7 @@ class YoloDecoder(tf.keras.Model):
                bias_regularizer=None,
                subdivisions = 8, 
                **kwargs):
-    # super().__init__(**kwargs)
+    super().__init__(**kwargs)
     self._embed_fpn = embed_fpn
     self._fpn_path_len = fpn_path_len
     self._path_process_len = path_process_len
@@ -401,14 +400,19 @@ class YoloDecoder(tf.keras.Model):
         embed_spp=self._embed_spp,
         **self._base_config)
 
-    inputs = {key: tf.keras.layers.Input(shape = value[1:]) for key, value in input_specs.items()}
+  def build(self, inputs):
     if self._embed_fpn:
-      inter_outs = YoloFPN(fpn_path_len=self._fpn_path_len, **self._base_config)(inputs)
-      outputs = YoloFPNDecoder(**self._decoder_config)(inter_outs)
+      self._fpn = YoloFPN(fpn_path_len=self._fpn_path_len, **self._base_config)
+      self._decoder = YoloFPNDecoder(**self._decoder_config)
     else:
-      outputs = YoloRoutedDecoder(**self._decoder_config)(inputs)
+      self._fpn = None
+      self._decoder = YoloRoutedDecoder(**self._decoder_config)
+    return
 
-    super().__init__(inputs=inputs, outputs=outputs, name='YoloDecoder')
+  def call(self, inputs, training=False):
+    if self._embed_fpn:
+      inputs = self._fpn(inputs)
+    return self._decoder(inputs)
 
   @property
   def neck(self):

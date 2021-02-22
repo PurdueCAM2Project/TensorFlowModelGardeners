@@ -22,7 +22,7 @@ task:
     max_level: 5
     min_level: 3
     norm_activation:
-      activation: leaky
+      activation: mish
       norm_epsilon: 0.001
       norm_momentum: 0.99
       use_sync_bn: false
