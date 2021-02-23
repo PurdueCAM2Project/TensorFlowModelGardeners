@@ -1,3 +1,4 @@
+"""
 import importlib as _imp
 import sys as _sys
 
@@ -39,3 +40,4 @@ else:
 
   def __dir__():
     return [*_sys.modules[__name__].__dict__, *_dict]
+"""
