@@ -110,24 +110,20 @@ class YoloFPN(tf.keras.layers.Layer):
       if level != self._max_level:
         self.resamples[str(level)] = nn_blocks.RouteMerge(
             filters=depth // 2, **self._base_config)
-        self.preprocessors[str(level)] = nn_blocks.DarkRouteProcess(
-            filters=depth,
-            repetitions=self._fpn_path_len,
-            insert_spp=False,
-            **self._base_config)
+        use_spp = False
+        repetitions = self._fpn_path_len
       else:
-        self.preprocessors[str(level)] = nn_blocks.DarkRouteProcess(
-            filters=depth,
-            repetitions=self._fpn_path_len + 2,
-            insert_spp=True,
-            **self._base_config)
+        use_spp = True
+        repetitions = self._fpn_path_len + 2
+      self.preprocessors[str(level)] = nn_blocks.DarkRouteProcess(
+          filters=depth,
+          repetitions=repetitions,
+          insert_spp=use_spp,
+          **self._base_config)
 
-      if level == self._min_level:
-        self.tails[str(level)] = nn_blocks.FPNTail(
-            filters=depth, upsample=False, **self._base_config)
-      else:
-        self.tails[str(level)] = nn_blocks.FPNTail(
-            filters=depth, upsample=True, **self._base_config)
+      upsample = (level != self._min_level)
+      self.tails[str(level)] = nn_blocks.FPNTail(
+          filters=depth, upsample=upsample, **self._base_config)
 
   def call(self, inputs):
     outputs = dict()
@@ -292,6 +288,7 @@ class YoloPAN(tf.keras.layers.Layer):
     for _ in range(self._min_level, self._max_level + 1):
       depths.append(minimum_depth)
       minimum_depth *= 2
+
     if self._fpn_input:
       return depths
     else:
@@ -399,10 +396,9 @@ class YoloDecoder(tf.keras.Model):
       inter_outs = YoloFPN(
           fpn_path_len=self._fpn_path_len, **self._base_config)(
               inputs)
-      outputs = YoloPAN(**self._decoder_config)(inter_outs)
     else:
-      inter_outs = None
-      outputs = YoloPAN(**self._decoder_config)(inputs)
+      inter_outs = inputs
+    outputs = YoloPAN(**self._decoder_config)(inter_outs)
 
     self._output_specs = {key: value.shape for key, value in outputs.items()}
     super().__init__(inputs=inputs, outputs=outputs, name='YoloDecoder')
