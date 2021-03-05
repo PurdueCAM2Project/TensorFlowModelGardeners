@@ -1,14 +1,38 @@
+# Lint as: python3
+# Copyright 2020 The TensorFlow Authors. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ==============================================================================
+
 """Contains definitions of Darknet Backbone Networks.
+
    The models are inspired by ResNet, and CSPNet
+
 Residual networks (ResNets) were proposed in:
 [1] Kaiming He, Xiangyu Zhang, Shaoqing Ren, Jian Sun
     Deep Residual Learning for Image Recognition. arXiv:1512.03385
+
 Cross Stage Partial networks (CSPNets) were proposed in:
-[1] Chien-Yao Wang, Hong-Yuan Mark Liao, I-Hau Yeh, Yueh-Hua Wu, Ping-Yang Chen, Jun-Wei Hsieh
-    CSPNet: A New Backbone that can Enhance Learning Capability of CNN. arXiv:1911.11929
+[1] Chien-Yao Wang, Hong-Yuan Mark Liao, I-Hau Yeh, Yueh-Hua Wu, Ping-Yang Chen,
+    Jun-Wei Hsieh
+    CSPNet: A New Backbone that can Enhance Learning Capability of CNN.
+    arXiv:1911.11929
+
+
 DarkNets Are used mainly for Object detection in:
 [1] Joseph Redmon, Ali Farhadi
     YOLOv3: An Incremental Improvement. arXiv:1804.02767
+
 [2] Alexey Bochkovskiy, Chien-Yao Wang, Hong-Yuan Mark Liao
     YOLOv4: Optimal Speed and Accuracy of Object Detection. arXiv:2004.10934
 """
@@ -117,146 +141,63 @@ LISTNAMES = [
     'default_activation', 'route', 'dialation', 'level/name', 'is_output'
 ]
 
+# yapf: disable
+# pylint: disable=line-too-long
 CSPDARKNET53 = {
-    'list_names':
-        LISTNAMES,
-    'splits': {
-        'backbone_split': 106,
-        'neck_split': 138
-    },
-    'backbone': [
-        [
-            'ConvBN', None, 1, False, 32, None, 3, 1, 'same', 'mish', -1, 1, 0,
-            False
-        ],
-        [
-            'DarkRes', 'csp', 1, True, 64, None, None, None, None, 'mish', -1,
-            1, 1, False
-        ],
-        [
-            'DarkRes', 'csp', 2, False, 128, None, None, None, None, 'mish', -1,
-            1, 2, False
-        ],
-        [
-            'DarkRes', 'csp', 8, False, 256, None, None, None, None, 'mish', -1,
-            1, 3, True
-        ],
-        [
-            'DarkRes', 'csp', 8, False, 512, None, None, None, None, 'mish', -1,
-            2, 4, True
-        ],
-        [
-            'DarkRes', 'csp', 4, False, 1024, None, None, None, None, 'mish',
-            -1, 4, 5, True
-        ],
+    "list_names": LISTNAMES,
+    "splits": {"backbone_split": 106,
+               "neck_split": 138},
+    "backbone": [
+        ["ConvBN", None, 1, False, 32, None, 3, 1, "same", "mish", -1, 0, False],
+        ["DarkRes", "csp", 1, True, 64, None, None, None, None, "mish", -1, 1, False],
+        ["DarkRes", "csp", 2, False, 128, None, None, None, None, "mish", -1, 2, False],
+        ["DarkRes", "csp", 8, False, 256, None, None, None, None, "mish", -1, 3, True],
+        ["DarkRes", "csp", 8, False, 512, None, None, None, None, "mish", -1, 4, True],
+        ["DarkRes", "csp", 4, False, 1024, None, None, None, None, "mish", -1, 5, True],
     ]
 }
 
 DARKNET53 = {
-    'list_names':
-        LISTNAMES,
-    'splits': {
-        'backbone_split': 76
-    },
-    'backbone': [
-        [
-            'ConvBN', None, 1, False, 32, None, 3, 1, 'same', 'leaky', -1, 1, 0,
-            False
-        ],
-        [
-            'DarkRes', 'residual', 1, True, 64, None, None, None, None, 'leaky',
-            -1, 1, 1, False
-        ],
-        [
-            'DarkRes', 'residual', 2, False, 128, None, None, None, None,
-            'leaky', -1, 1, 2, False
-        ],
-        [
-            'DarkRes', 'residual', 8, False, 256, None, None, None, None,
-            'leaky', -1, 1, 3, True
-        ],
-        [
-            'DarkRes', 'residual', 8, False, 512, None, None, None, None,
-            'leaky', -1, 2, 4, True
-        ],
-        [
-            'DarkRes', 'residual', 4, False, 1024, None, None, None, None,
-            'leaky', -1, 4, 5, True
-        ],
+    "list_names": LISTNAMES,
+    "splits": {"backbone_split": 76},
+    "backbone": [
+        ["ConvBN", None, 1, False, 32, None, 3, 1, "same", "leaky", -1, 0, False],
+        ["DarkRes", "residual", 1, True, 64, None, None, None, None, "leaky", -1, 1, False],
+        ["DarkRes", "residual", 2, False, 128, None, None, None, None, "leaky", -1, 2, False],
+        ["DarkRes", "residual", 8, False, 256, None, None, None, None, "leaky", -1, 3, True],
+        ["DarkRes", "residual", 8, False, 512, None, None, None, None, "leaky", -1, 4, True],
+        ["DarkRes", "residual", 4, False, 1024, None, None, None, None, "leaky", -1, 5, True],
     ]
 }
 
 CSPDARKNETTINY = {
-    'list_names':
-        LISTNAMES,
-    'splits': {
-        'backbone_split': 28
-    },
-    'backbone': [
-        [
-            'ConvBN', None, 1, False, 32, None, 3, 2, 'same', 'leaky', -1, 1, 0,
-            False
-        ],
-        [
-            'ConvBN', None, 1, False, 64, None, 3, 2, 'same', 'leaky', -1, 1, 1,
-            False
-        ],
-        [
-            'CSPTiny', 'csp_tiny', 1, False, 64, None, 3, 2, 'same', 'leaky',
-            -1, 1, 2, False
-        ],
-        [
-            'CSPTiny', 'csp_tiny', 1, False, 128, None, 3, 2, 'same', 'leaky',
-            -1, 1, 3, False
-        ],
-        [
-            'CSPTiny', 'csp_tiny', 1, False, 256, None, 3, 2, 'same', 'leaky',
-            -1, 1, 4, True
-        ],
-        [
-            'ConvBN', None, 1, False, 512, None, 3, 1, 'same', 'leaky', -1, 1,
-            5, True
-        ],
+    "list_names": LISTNAMES,
+    "splits": {"backbone_split": 28},
+    "backbone": [
+        ["ConvBN", None, 1, False, 32, None, 3, 2, "same", "leaky", -1, 0, False],
+        ["ConvBN", None, 1, False, 64, None, 3, 2, "same", "leaky", -1, 1, False],
+        ["CSPTiny", "csp_tiny", 1, False, 64, None, 3, 2, "same", "leaky", -1, 2, False],
+        ["CSPTiny", "csp_tiny", 1, False, 128, None, 3, 2, "same", "leaky", -1, 3, False],
+        ["CSPTiny", "csp_tiny", 1, False, 256, None, 3, 2, "same", "leaky", -1, 4, True],
+        ["ConvBN", None, 1, False, 512, None, 3, 1, "same", "leaky", -1, 5, True],
     ]
 }
 
 DARKNETTINY = {
-    'list_names':
-        LISTNAMES,
-    'splits': {
-        'backbone_split': 14
-    },
-    'backbone': [
-        [
-            'ConvBN', None, 1, False, 16, None, 3, 1, 'same', 'leaky', -1, 1, 0,
-            False
-        ],
-        [
-            'DarkTiny', 'tiny', 1, True, 32, None, 3, 2, 'same', 'leaky', -1, 1,
-            1, False
-        ],
-        [
-            'DarkTiny', 'tiny', 1, True, 64, None, 3, 2, 'same', 'leaky', -1, 1,
-            2, False
-        ],
-        [
-            'DarkTiny', 'tiny', 1, False, 128, None, 3, 2, 'same', 'leaky', -1,
-            1, 3, False
-        ],
-        [
-            'DarkTiny', 'tiny', 1, False, 256, None, 3, 2, 'same', 'leaky', -1,
-            1, 4, True
-        ],
-        [
-            'DarkTiny', 'tiny', 1, False, 512, None, 3, 2, 'same', 'leaky', -1,
-            1, 5, False
-        ],
-        [
-            'DarkTiny', 'tiny', 1, False, 1024, None, 3, 1, 'same', 'leaky', -1,
-            1, 5, True
-        ],
+    "list_names": LISTNAMES,
+    "splits": {"backbone_split": 14},
+    "backbone": [
+        ["ConvBN", None, 1, False, 16, None, 3, 1, "same", "leaky", -1, 0, False],
+        ["DarkTiny", "tiny", 1, True, 32, None, 3, 2, "same", "leaky", -1, 1, False],
+        ["DarkTiny", "tiny", 1, True, 64, None, 3, 2, "same", "leaky", -1, 2, False],
+        ["DarkTiny", "tiny", 1, False, 128, None, 3, 2, "same", "leaky", -1, 3, False],
+        ["DarkTiny", "tiny", 1, False, 256, None, 3, 2, "same", "leaky", -1, 4, True],
+        ["DarkTiny", "tiny", 1, False, 512, None, 3, 2, "same", "leaky", -1, 5, False],
+        ["DarkTiny", "tiny", 1, False, 1024, None, 3, 1, "same", "leaky", -1, 5, True],
     ]
 }
+# pylint: enable=line-too-long
+# yapf: enable
 
 BACKBONES = {
     'darknettiny': DARKNETTINY,
