@@ -13,25 +13,11 @@ def load_data_region(im, w, h, jitter, hue, saturation, exposure):
   pleft, pright = tf.random.uniform(shape=[2], minval = -dw, maxval=dw, dtype=tf.int32)
   ptop, pbot = tf.random.uniform(shape=[2], minval = -dh, maxval=dh, dtype=tf.int32)
 
-  # crop offsets
-  left_offset = max(0, pleft)
-  right_offset = max(0, pright)
-  top_offset = max(0, ptop)
-  bot_offset = max(0, pbot)
+  swidth = ow - pleft - pright
+  sheight = oh - ptop - pbot
 
-  target_width = ow - left_offset - right_offset
-  target_height = oh - top_offset - bot_offset
+  cropped = darknet_crop(im, top_offset, left_offset, target_width, target_height)
 
-  cropped = darknet_crop(im, top_offset, left_offset, target_height, target_width)
-
-  # padding values
-  left_pad = abs(min(pleft, 0))
-  right_pad = abs(min(pright, 0))
-  top_pad = abs(min(ptop, 0))
-  bot_pad = abs(min(pbot, 0))
-
-  padded = tf.pad(cropped, [[top_pad, bot_pad], [left_pad, right_pad], [0, 0]])
-  
   sized = tf.image.resize(padded, [w,h])
 
   flip = tf.random.uniform([], minval=0, maxval=1, dtype=tf.int32)
@@ -41,34 +27,32 @@ def load_data_region(im, w, h, jitter, hue, saturation, exposure):
   return random_distort_image(sized, hue, saturation, exposure)
 
 
-''' WIP CANT CHANGE TENSOR OBJECTS
-def darknet_crop(im, dx, dy, w, h):
-   
-  im_h, im_w, im_c = tf.shape(im) 
-  for k in range(im_c):
-    for j in range(1, w):
-        r = constrain_int(j + dy, 0, im_h-1)
-        c = constrain_int(i + dx, 0, im_w-1)
-        cropped[i][j][k] = im[r][c][k]
-  return cropped
+def darknet_crop(image, dx, dy, w, h):
+  oh, ow = tf.shape(image)[:2]
 
-def constrain_int(a, min, max):
-  if a < min:
-    return min
-  if a > max:
-    return max
-  return a  
-'''
+  # crop offsets
+  left_offset = max(0, pleft)
+  right_offset = max(0, pright)
+  top_offset = max(0, ptop)
+  bot_offset = max(0, pbot)
 
-def darknet_crop(image, offset_top, offset_left, target_height, target_width):
-    return tf.image.crop_to_bounding_box(
-        image, offset_top, offset_left, target_height, target_width
-    )
+  cheight = ow - left_offset - right_offset
+  cwidth = oh - top_offset - bot_offset
+  cropped = tf.image.crop_to_bounding_box(image, top_offset, left_offset, cheight, cwidth)
+
+  # padding values
+  left_pad = abs(min(pleft, 0))
+  right_pad = abs(min(pright, 0))
+  top_pad = abs(min(ptop, 0))
+  bot_pad = abs(min(pbot, 0))
+
+  return tf.pad(cropped, [[top_pad, bot_pad], [left_pad, right_pad], [0, 0]])
+
 
 def distort_image(im, hue, sat, val):
   orig_type = im.dtype
   im = tf.cast(im, dtype=tf.float32)
-  h, w, c = tf.shape(im)
+  h, w= tf.shape(im)[:2]
 
   im = tf.image.rgb_to_hsv(im)
   
