@@ -18,7 +18,7 @@ def load_data_region(im, w, h, jitter, hue, saturation, exposure):
 
   cropped = darknet_crop(im, pleft, pright, ptop, pbot)
 
-  sized = tf.image.resize(cropped, [w,h])
+  sized = tf.image.resize(cropped, [w,h], method='nearest')
 
   flip = tf.random.uniform([], minval=0, maxval=1, dtype=tf.int32)
   if flip:
@@ -36,8 +36,8 @@ def darknet_crop(image, pleft, pright, ptop, pbot):
   top_offset = max(0, ptop)
   bot_offset = max(0, pbot)
 
-  cheight = ow - left_offset - right_offset
-  cwidth = oh - top_offset - bot_offset
+  cwidth = ow - left_offset - right_offset
+  cheight = oh - top_offset - bot_offset
 
   cropped = tf.image.crop_to_bounding_box(image, top_offset, left_offset, cheight, cwidth)
 
