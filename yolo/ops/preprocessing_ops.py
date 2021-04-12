@@ -4,6 +4,72 @@ import tensorflow.keras.backend as K
 from yolo.ops import box_ops
 from official.vision.beta.ops import preprocess_ops
 
+def load_data_region(im, w, h, jitter, hue, saturation, exposure):
+  oh, ow = tf.shape(im)[:2]
+
+  dw = tf.cast(tf.cast(ow, dtype=tf.float32) * jitter, dtype=tf.int32)
+  dh = tf.cast(tf.cast(oh, dtype=tf.float32) * jitter, dtype=tf.int32)
+
+  pleft, pright = tf.random.uniform(shape=[2], minval = -dw, maxval=dw, dtype=tf.int32)
+  ptop, pbot = tf.random.uniform(shape=[2], minval = -dh, maxval=dh, dtype=tf.int32)
+
+  swidth = ow - pleft - pright
+  sheight = oh - ptop - pbot
+
+  cropped = darknet_crop(im, pleft, ptop, swidth, sheight)
+  
+  sized = tf.image.resize(im, [w,h])
+
+  flip = tf.random.uniform([], minval=0, maxval=1, dtype=tf.int32)
+  if flip:
+    sized = tf.image.flip_left_right(sized)
+
+  return random_distort_image(sized, hue, saturation, exposure)
+
+
+''' WIP CANT CHANGE TENSOR OBJECTS
+def darknet_crop(im, dx, dy, w, h):
+   
+  im_h, im_w, im_c = tf.shape(im) 
+  for k in range(im_c):
+    for j in range(1, w):
+        r = constrain_int(j + dy, 0, im_h-1)
+        c = constrain_int(i + dx, 0, im_w-1)
+        cropped[i][j][k] = im[r][c][k]
+  return cropped
+
+def constrain_int(a, min, max):
+  if a < min:
+    return min
+  if a > max:
+    return max
+  return a  
+'''
+
+def distort_image(im, hue, sat, val):
+  orig_type = im.dtype
+  im = tf.cast(im, dtype=tf.float32)
+  h, w, c = tf.shape(im)
+
+  im = tf.image.rgb_to_hsv(im)
+  
+  x = tf.squeeze(tf.slice(im, [0, 0, 0], [h, w, 1]))
+  y = tf.squeeze(tf.slice(im, [0, 0, 1], [h, w, 1])) * sat
+  z = tf.squeeze(tf.slice(im, [0, 0, 2], [h, w, 1])) * val
+  im = tf.stack([x, y, z], axis=2)
+
+  im = tf.image.hsv_to_rgb(im)
+  im = tf.image.adjust_hue(im, hue)
+
+  return tf.cast(im, dtype=orig_type)
+
+
+def random_distort_image(im, hue, saturation, exposure):
+  dhue = rand_uniform_strong(-hue, hue)
+  dsat = rand_scale(saturation)
+  dexp = rand_scale(exposure)
+  return distort_image(im, dhue, dsat, dexp)
+
 
 def rand_uniform_strong(minval, maxval, dtype=tf.float32):
   if minval > maxval:
