@@ -13,12 +13,26 @@ def load_data_region(im, w, h, jitter, hue, saturation, exposure):
   pleft, pright = tf.random.uniform(shape=[2], minval = -dw, maxval=dw, dtype=tf.int32)
   ptop, pbot = tf.random.uniform(shape=[2], minval = -dh, maxval=dh, dtype=tf.int32)
 
-  swidth = ow - pleft - pright
-  sheight = oh - ptop - pbot
+  # crop offsets
+  left_offset = max(0, pleft)
+  right_offset = max(0, pright)
+  top_offset = max(0, ptop)
+  bot_offset = max(0, pbot)
 
-  cropped = darknet_crop(im, pleft, ptop, swidth, sheight)
+  target_width = ow - left_offset - right_offset
+  target_height = oh - top_offset - bot_offset
+
+  cropped = darknet_crop(im, top_offset, left_offset, target_height, target_width)
+
+  # padding values
+  left_pad = abs(min(pleft, 0))
+  right_pad = abs(min(pright, 0))
+  top_pad = abs(min(ptop, 0))
+  bot_pad = abs(min(pbot, 0))
+
+  padded = tf.pad(cropped, [[top_pad, bot_pad], [left_pad, right_pad], [0, 0]])
   
-  sized = tf.image.resize(im, [w,h])
+  sized = tf.image.resize(padded, [w,h])
 
   flip = tf.random.uniform([], minval=0, maxval=1, dtype=tf.int32)
   if flip:
@@ -45,6 +59,11 @@ def constrain_int(a, min, max):
     return max
   return a  
 '''
+
+def darknet_crop(image, offset_top, offset_left, target_height, target_width):
+    return tf.image.crop_to_bounding_box(
+        image, offset_top, offset_left, target_height, target_width
+    )
 
 def distort_image(im, hue, sat, val):
   orig_type = im.dtype
