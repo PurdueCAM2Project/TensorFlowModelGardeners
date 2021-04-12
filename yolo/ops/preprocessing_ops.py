@@ -16,7 +16,7 @@ def load_data_region(im, w, h, jitter, hue, saturation, exposure):
   swidth = ow - pleft - pright
   sheight = oh - ptop - pbot
 
-  cropped = darknet_crop(im, top_offset, left_offset, target_width, target_height)
+  cropped = darknet_crop(im, pleft, pright, ptop, pbot)
 
   sized = tf.image.resize(padded, [w,h])
 
@@ -27,7 +27,7 @@ def load_data_region(im, w, h, jitter, hue, saturation, exposure):
   return random_distort_image(sized, hue, saturation, exposure)
 
 
-def darknet_crop(image, dx, dy, w, h):
+def darknet_crop(image, pleft, pright, ptop, pbot):
   oh, ow = tf.shape(image)[:2]
 
   # crop offsets
