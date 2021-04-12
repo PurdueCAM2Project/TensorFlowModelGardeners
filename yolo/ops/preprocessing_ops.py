@@ -36,8 +36,8 @@ def darknet_crop(image, pleft, pright, ptop, pbot):
   top_offset = max(0, ptop)
   bot_offset = max(0, pbot)
 
-  cheight = ow - left_offset - right_offset
-  cwidth = oh - top_offset - bot_offset
+  cheight = ow - right_offset
+  cwidth = oh - bot_offset
   cropped = tf.image.crop_to_bounding_box(image, top_offset, left_offset, cheight, cwidth)
 
   # padding values
