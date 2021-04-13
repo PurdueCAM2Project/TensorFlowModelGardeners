@@ -5,7 +5,8 @@ from yolo.ops import box_ops
 from official.vision.beta.ops import preprocess_ops
 from official.vision.beta.ops import box_ops as bbox_ops
 
-def load_data_region(im, w, h, jitter, hue, saturation, exposure):
+
+def load_data_region(im, boxes, w, h, jitter, hue, saturation, exposure):
   oh, ow = tf.shape(im)[:2]
 
   dw = tf.cast(tf.cast(ow, dtype=tf.float32) * jitter, dtype=tf.int32)
@@ -14,41 +15,90 @@ def load_data_region(im, w, h, jitter, hue, saturation, exposure):
   pleft, pright = tf.random.uniform(shape=[2], minval = -dw, maxval=dw, dtype=tf.int32)
   ptop, pbot = tf.random.uniform(shape=[2], minval = -dh, maxval=dh, dtype=tf.int32)
 
-  swidth = ow - pleft - pright
-  sheight = oh - ptop - pbot
-
-  cropped = darknet_crop(im, pleft, pright, ptop, pbot)
-
-  sized = tf.image.resize(cropped, [w,h], method='nearest')
-
-  flip = tf.random.uniform([], minval=0, maxval=1, dtype=tf.int32)
-  if flip:
-    sized = tf.image.flip_left_right(sized)
-
-  return random_distort_image(sized, hue, saturation, exposure)
-
-
-def darknet_crop(image, pleft, pright, ptop, pbot):
-  oh, ow = tf.shape(image)[:2]
-
-  # crop offsets
+  # Crop offsets
   left_offset = max(0, pleft)
   right_offset = max(0, pright)
   top_offset = max(0, ptop)
   bot_offset = max(0, pbot)
 
+  # Cropped image dimensions
   cwidth = ow - left_offset - right_offset
   cheight = oh - top_offset - bot_offset
 
+  # Crop the image
   cropped = tf.image.crop_to_bounding_box(image, top_offset, left_offset, cheight, cwidth)
 
-  # padding values
+  # Padding values
   left_pad = abs(min(pleft, 0))
   right_pad = abs(min(pright, 0))
   top_pad = abs(min(ptop, 0))
   bot_pad = abs(min(pbot, 0))
 
-  return tf.pad(cropped, [[top_pad, bot_pad], [left_pad, right_pad], [0, 0]])
+  # Pad the image
+  padded = tf.pad(cropped, [[top_pad, bot_pad], [left_pad, right_pad], [0, 0]])
+
+  sized = tf.image.resize(padded, [w,h], method='nearest')
+
+  flip = tf.random.uniform([], minval=0, maxval=2, dtype=tf.int32)
+  if flip:
+    sized = tf.image.flip_left_right(sized)
+
+  distorted = random_distort_image(sized, hue, saturation, exposure)
+
+  # Augment bounding boxes
+  sx = float(cwidth + left_pad + right_pad) / float(ow)
+  sy = float(cheight + top_pad + bot_pad) / float(oh)
+  
+  dx = float(pleft) / float(ow) / sx
+  dy = float(ptop) / float(oh) / sy
+
+  new_boxes = fill_truth_region(boxes, ow, oh, dx, dy, 1./sx, 1./sy, flip)
+
+  return distorted, new_boxes
+
+
+def fill_truth_region(boxes, ow, oh, dx, dy, sx, sy, flip):
+  new_boxes = []
+  for ymin, xmin, ymax, xmax in boxes:
+    left = float(xmin)
+    right = float(xmax)
+    top = float(ymin)
+    bot = float(ymax)
+
+    left = left * sx - dx
+    right = right * sx - dx
+    top = top * sy - dy
+    bot = bot * sy - dy
+
+    if flip:
+      left, right = 1. - right, 1. - left
+
+    left = constrain(0, 1, left)
+    right = constrain(0, 1 right)
+    top = constrain(0, 1, top)
+    bot = constrain(0, 1, bot)
+
+    new_x = left
+    new_y = top
+    new_width = right - left
+    new_height = bot - top
+
+    new_width = constrain(0, 1, new_width)
+    new_height = constrain(0, 1, new_height)
+
+    if new_width < 0.001 or new_height < 0.001:
+      continue
+
+    new_boxes.append([float(new_x), float(new_y), float(new_width), float(new_height)])
+  return tf.constant(new_boxes, dtype=tf.float32)
+
+
+def constrain(lb, ub, val):
+  if val < lb:
+    return lb
+  elif ub < val:
+    return ub
+  return val
 
 
 def distort_image(im, hue, sat, val):
