@@ -1,0 +1,355 @@
+1) Running 'python linter test_folder_linter" gives this:
+ERROR:root:bad input: type=0, value='', context=('\n', (75, 0))
+Error trying to fix quotes: Traceback (most recent call last):
+  File "linter\yapf_contrib\fixers\fixers_api.py", line 70, in _Run2to3Fixers
+    return '{}'.format(tool.refactor_string(source, name=''))
+  File "C:\Users\iryna\AppData\Local\Programs\Python\Python37-32\lib\lib2to3\refactor.py", line 361, in refactor_string
+    name, err.__class__.__name__, err)
+  File "C:\Users\iryna\AppData\Local\Programs\Python\Python37-32\lib\lib2to3\refactor.py", line 358, in refactor_string
+    tree = self.driver.parse_string(data)
+  File "C:\Users\iryna\AppData\Local\Programs\Python\Python37-32\lib\lib2to3\pgen2\driver.py", line 104, in parse_string
+    return self.parse_tokens(tokens, debug)
+  File "C:\Users\iryna\AppData\Local\Programs\Python\Python37-32\lib\lib2to3\pgen2\driver.py", line 72, in parse_tokens
+    if p.addtoken(type, value, (prefix, start)):
+  File "C:\Users\iryna\AppData\Local\Programs\Python\Python37-32\lib\lib2to3\pgen2\parse.py", line 159, in addtoken
+    raise ParseError("bad input", type, value, context)
+lib2to3.pgen2.parse.ParseError: bad input: type=0, value='', context=('\n', (75, 0))
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "linter\__main__.py", line 93, in <module>
+    src = fixers_api.Pre2to3FixerRun(src, {'fixers': ['quotes']})
+  File "linter\yapf_contrib\fixers\fixers_api.py", line 45, in Pre2to3FixerRun
+    return _Run2to3Fixers(original_source, options=options)
+  File "linter\yapf_contrib\fixers\fixers_api.py", line 75, in _Run2to3Fixers
+    return '{}'.format(tool.refactor_string(source, name=''))
+  File "C:\Users\iryna\AppData\Local\Programs\Python\Python37-32\lib\lib2to3\refactor.py", line 361, in refactor_string
+    name, err.__class__.__name__, err)
+  File "C:\Users\iryna\AppData\Local\Programs\Python\Python37-32\lib\lib2to3\refactor.py", line 358, in refactor_string
+    tree = self.driver.parse_string(data)
+  File "C:\Users\iryna\AppData\Local\Programs\Python\Python37-32\lib\lib2to3\pgen2\driver.py", line 104, in parse_string
+    return self.parse_tokens(tokens, debug)
+  File "C:\Users\iryna\AppData\Local\Programs\Python\Python37-32\lib\lib2to3\pgen2\driver.py", line 72, in parse_tokens
+    if p.addtoken(type, value, (prefix, start)):
+  File "C:\Users\iryna\AppData\Local\Programs\Python\Python37-32\lib\lib2to3\pgen2\parse.py", line 159, in addtoken
+    raise ParseError("bad input", type, value, context)
+lib2to3.pgen2.parse.ParseError: bad input: type=0, value='', context=('\n', (75, 0))
+
+NOTE : I didn't pass any options parameters into it, yet it printed out error message about quotes...  
+
+2) Indenting a print statement where it shouldn't be indented (on line 21):
+ERROR:root:bad input: type=5, value='    ', context=('\n', (21, 0))
+Error trying to fix quotes: Traceback (most recent call last):
+  File "linter\yapf_contrib\fixers\fixers_api.py", line 70, in _Run2to3Fixers
+    return '{}'.format(tool.refactor_string(source, name=''))
+  File "C:\Users\iryna\AppData\Local\Programs\Python\Python37-32\lib\lib2to3\refactor.py", line 361, in refactor_string
+    name, err.__class__.__name__, err)
+  File "C:\Users\iryna\AppData\Local\Programs\Python\Python37-32\lib\lib2to3\refactor.py", line 358, in refactor_string
+    tree = self.driver.parse_string(data)
+  File "C:\Users\iryna\AppData\Local\Programs\Python\Python37-32\lib\lib2to3\pgen2\driver.py", line 104, in parse_string
+    return self.parse_tokens(tokens, debug)
+  File "C:\Users\iryna\AppData\Local\Programs\Python\Python37-32\lib\lib2to3\pgen2\driver.py", line 72, in parse_tokens
+    if p.addtoken(type, value, (prefix, start)):
+  File "C:\Users\iryna\AppData\Local\Programs\Python\Python37-32\lib\lib2to3\pgen2\parse.py", line 159, in addtoken
+    raise ParseError("bad input", type, value, context)
+lib2to3.pgen2.parse.ParseError: bad input: type=5, value='    ', context=('\n', (21, 0))
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "linter\__main__.py", line 93, in <module>
+    src = fixers_api.Pre2to3FixerRun(src, {'fixers': ['quotes']})
+  File "linter\yapf_contrib\fixers\fixers_api.py", line 45, in Pre2to3FixerRun
+    return _Run2to3Fixers(original_source, options=options)
+  File "linter\yapf_contrib\fixers\fixers_api.py", line 75, in _Run2to3Fixers
+    return '{}'.format(tool.refactor_string(source, name=''))
+  File "C:\Users\iryna\AppData\Local\Programs\Python\Python37-32\lib\lib2to3\refactor.py", line 361, in refactor_string
+    name, err.__class__.__name__, err)
+  File "C:\Users\iryna\AppData\Local\Programs\Python\Python37-32\lib\lib2to3\refactor.py", line 358, in refactor_string
+    tree = self.driver.parse_string(data)
+  File "C:\Users\iryna\AppData\Local\Programs\Python\Python37-32\lib\lib2to3\pgen2\driver.py", line 104, in parse_string
+    return self.parse_tokens(tokens, debug)
+  File "C:\Users\iryna\AppData\Local\Programs\Python\Python37-32\lib\lib2to3\pgen2\driver.py", line 72, in parse_tokens
+    if p.addtoken(type, value, (prefix, start)):
+  File "C:\Users\iryna\AppData\Local\Programs\Python\Python37-32\lib\lib2to3\pgen2\parse.py", line 159, in addtoken
+    raise ParseError("bad input", type, value, context)
+lib2to3.pgen2.parse.ParseError: bad input: type=5, value='    ', context=('\n', (21, 0))
+
+Traceback (most recent call last):
+  File "C:\Users\iryna\AppData\Local\Programs\Python\Python37-32\lib\site-packages\yapf\yapflib\pytree_utils.py", line 115, in ParseCodeToTree
+    tree = parser_driver.parse_string(code, debug=False)
+  File "C:\Users\iryna\AppData\Local\Programs\Python\Python37-32\lib\lib2to3\pgen2\driver.py", line 104, in parse_string
+    return self.parse_tokens(tokens, debug)
+  File "C:\Users\iryna\AppData\Local\Programs\Python\Python37-32\lib\lib2to3\pgen2\driver.py", line 72, in parse_tokens
+    if p.addtoken(type, value, (prefix, start)):
+  File "C:\Users\iryna\AppData\Local\Programs\Python\Python37-32\lib\lib2to3\pgen2\parse.py", line 159, in addtoken
+    raise ParseError("bad input", type, value, context)
+lib2to3.pgen2.parse.ParseError: bad input: type=5, value='    ', context=('\n', (21, 0))
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\iryna\AppData\Local\Programs\Python\Python37-32\lib\site-packages\yapf\yapflib\pytree_utils.py", line 121, in ParseCodeToTree
+    tree = parser_driver.parse_string(code, debug=False)
+  File "C:\Users\iryna\AppData\Local\Programs\Python\Python37-32\lib\lib2to3\pgen2\driver.py", line 104, in parse_string
+    return self.parse_tokens(tokens, debug)
+  File "C:\Users\iryna\AppData\Local\Programs\Python\Python37-32\lib\lib2to3\pgen2\driver.py", line 72, in parse_tokens
+    if p.addtoken(type, value, (prefix, start)):
+  File "C:\Users\iryna\AppData\Local\Programs\Python\Python37-32\lib\lib2to3\pgen2\parse.py", line 159, in addtoken
+    raise ParseError("bad input", type, value, context)
+lib2to3.pgen2.parse.ParseError: bad input: type=5, value='    ', context=('\n', (21, 0))
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\iryna\AppData\Local\Programs\Python\Python37-32\lib\runpy.py", line 193, in _run_module_as_main
+    "__main__", mod_spec)
+  File "C:\Users\iryna\AppData\Local\Programs\Python\Python37-32\lib\runpy.py", line 85, in _run_code
+    exec(code, run_globals)
+  File "linter\__main__.py", line 102, in <module>
+    src, _changed = yapf_api.FormatCode(src, file, 'yapf')
+  File "C:\Users\iryna\AppData\Local\Programs\Python\Python37-32\lib\site-packages\yapf\yapflib\yapf_api.py", line 147, in FormatCode
+    tree = pytree_utils.ParseCodeToTree(unformatted_source)
+  File "C:\Users\iryna\AppData\Local\Programs\Python\Python37-32\lib\site-packages\yapf\yapflib\pytree_utils.py", line 127, in ParseCodeToTree
+    raise e
+  File "C:\Users\iryna\AppData\Local\Programs\Python\Python37-32\lib\site-packages\yapf\yapflib\pytree_utils.py", line 125, in ParseCodeToTree
+    ast.parse(code)
+  File "C:\Users\iryna\AppData\Local\Programs\Python\Python37-32\lib\ast.py", line 35, in parse
+    return compile(source, filename, mode, PyCF_ONLY_AST)
+  File "<unknown>", line 21
+    print("\n> Splitting data into 80% train and 20% test...")
+    ^
+IndentationError: unexpected indent
+
+3) For the following code:
+for row in train:
+    if row[-1] == 2:
+    row[-1] = -1
+  else:
+    row[-1] = 1
+
+It outputs this error:
+
+ERROR:root:bad input: type=5, value='  ', context=('\n', (21, 0))
+Error trying to fix quotes: Traceback (most recent call last):
+  File "linter\yapf_contrib\fixers\fixers_api.py", line 70, in _Run2to3Fixers
+    return '{}'.format(tool.refactor_string(source, name=''))
+  File "C:\Users\iryna\AppData\Local\Programs\Python\Python37-32\lib\lib2to3\refactor.py", line 361, in refactor_string
+    name, err.__class__.__name__, err)
+  File "C:\Users\iryna\AppData\Local\Programs\Python\Python37-32\lib\lib2to3\refactor.py", line 358, in refactor_string
+    tree = self.driver.parse_string(data)
+  File "C:\Users\iryna\AppData\Local\Programs\Python\Python37-32\lib\lib2to3\pgen2\driver.py", line 104, in parse_string
+    return self.parse_tokens(tokens, debug)
+  File "C:\Users\iryna\AppData\Local\Programs\Python\Python37-32\lib\lib2to3\pgen2\driver.py", line 72, in parse_tokens
+    if p.addtoken(type, value, (prefix, start)):
+  File "C:\Users\iryna\AppData\Local\Programs\Python\Python37-32\lib\lib2to3\pgen2\parse.py", line 159, in addtoken
+    raise ParseError("bad input", type, value, context)
+lib2to3.pgen2.parse.ParseError: bad input: type=5, value='  ', context=('\n', (21, 0))
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "linter\__main__.py", line 93, in <module>
+    src = fixers_api.Pre2to3FixerRun(src, {'fixers': ['quotes']})
+  File "linter\yapf_contrib\fixers\fixers_api.py", line 45, in Pre2to3FixerRun
+    return _Run2to3Fixers(original_source, options=options)
+  File "linter\yapf_contrib\fixers\fixers_api.py", line 75, in _Run2to3Fixers
+    return '{}'.format(tool.refactor_string(source, name=''))
+  File "C:\Users\iryna\AppData\Local\Programs\Python\Python37-32\lib\lib2to3\refactor.py", line 361, in refactor_string
+    name, err.__class__.__name__, err)
+  File "C:\Users\iryna\AppData\Local\Programs\Python\Python37-32\lib\lib2to3\refactor.py", line 358, in refactor_string
+    tree = self.driver.parse_string(data)
+  File "C:\Users\iryna\AppData\Local\Programs\Python\Python37-32\lib\lib2to3\pgen2\driver.py", line 104, in parse_string
+    return self.parse_tokens(tokens, debug)
+  File "C:\Users\iryna\AppData\Local\Programs\Python\Python37-32\lib\lib2to3\pgen2\driver.py", line 72, in parse_tokens
+    if p.addtoken(type, value, (prefix, start)):
+  File "C:\Users\iryna\AppData\Local\Programs\Python\Python37-32\lib\lib2to3\pgen2\parse.py", line 159, in addtoken
+    raise ParseError("bad input", type, value, context)
+lib2to3.pgen2.parse.ParseError: bad input: type=5, value='  ', context=('\n', (21, 0))
+
+Traceback (most recent call last):
+  File "C:\Users\iryna\AppData\Local\Programs\Python\Python37-32\lib\site-packages\yapf\yapflib\pytree_utils.py", line 115, in ParseCodeToTree
+    tree = parser_driver.parse_string(code, debug=False)
+  File "C:\Users\iryna\AppData\Local\Programs\Python\Python37-32\lib\lib2to3\pgen2\driver.py", line 104, in parse_string
+    return self.parse_tokens(tokens, debug)
+  File "C:\Users\iryna\AppData\Local\Programs\Python\Python37-32\lib\lib2to3\pgen2\driver.py", line 72, in parse_tokens
+    if p.addtoken(type, value, (prefix, start)):
+  File "C:\Users\iryna\AppData\Local\Programs\Python\Python37-32\lib\lib2to3\pgen2\parse.py", line 159, in addtoken
+    raise ParseError("bad input", type, value, context)
+lib2to3.pgen2.parse.ParseError: bad input: type=5, value='  ', context=('\n', (21, 0))
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\iryna\AppData\Local\Programs\Python\Python37-32\lib\site-packages\yapf\yapflib\pytree_utils.py", line 121, in ParseCodeToTree
+    tree = parser_driver.parse_string(code, debug=False)
+  File "C:\Users\iryna\AppData\Local\Programs\Python\Python37-32\lib\lib2to3\pgen2\driver.py", line 104, in parse_string
+    return self.parse_tokens(tokens, debug)
+  File "C:\Users\iryna\AppData\Local\Programs\Python\Python37-32\lib\lib2to3\pgen2\driver.py", line 72, in parse_tokens
+    if p.addtoken(type, value, (prefix, start)):
+  File "C:\Users\iryna\AppData\Local\Programs\Python\Python37-32\lib\lib2to3\pgen2\parse.py", line 159, in addtoken
+    raise ParseError("bad input", type, value, context)
+lib2to3.pgen2.parse.ParseError: bad input: type=5, value='  ', context=('\n', (21, 0))
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\iryna\AppData\Local\Programs\Python\Python37-32\lib\runpy.py", line 193, in _run_module_as_main
+    "__main__", mod_spec)
+  File "C:\Users\iryna\AppData\Local\Programs\Python\Python37-32\lib\runpy.py", line 85, in _run_code
+    exec(code, run_globals)
+  File "linter\__main__.py", line 102, in <module>
+    src, _changed = yapf_api.FormatCode(src, file, 'yapf')
+  File "C:\Users\iryna\AppData\Local\Programs\Python\Python37-32\lib\site-packages\yapf\yapflib\yapf_api.py", line 147, in FormatCode
+    tree = pytree_utils.ParseCodeToTree(unformatted_source)
+  File "C:\Users\iryna\AppData\Local\Programs\Python\Python37-32\lib\site-packages\yapf\yapflib\pytree_utils.py", line 127, in ParseCodeToTree
+    raise e
+  File "C:\Users\iryna\AppData\Local\Programs\Python\Python37-32\lib\site-packages\yapf\yapflib\pytree_utils.py", line 125, in ParseCodeToTree
+    ast.parse(code)
+  File "C:\Users\iryna\AppData\Local\Programs\Python\Python37-32\lib\ast.py", line 35, in parse
+    return compile(source, filename, mode, PyCF_ONLY_AST)
+  File "<unknown>", line 21
+    print("\n> Splitting data into 80% train and 20% test...")
+    ^
+IndentationError: unexpected indent
+
+C:\Users\iryna\Desktop\TF research\TensorFlowModels>python linter test_folder_linter\test_file.py
+ERROR:root:bad input: type=1, value='row', context=('    ', (29, 4))
+Error trying to fix quotes: Traceback (most recent call last):
+  File "linter\yapf_contrib\fixers\fixers_api.py", line 70, in _Run2to3Fixers
+    return '{}'.format(tool.refactor_string(source, name=''))
+  File "C:\Users\iryna\AppData\Local\Programs\Python\Python37-32\lib\lib2to3\refactor.py", line 361, in refactor_string
+    name, err.__class__.__name__, err)
+  File "C:\Users\iryna\AppData\Local\Programs\Python\Python37-32\lib\lib2to3\refactor.py", line 358, in refactor_string
+    tree = self.driver.parse_string(data)
+  File "C:\Users\iryna\AppData\Local\Programs\Python\Python37-32\lib\lib2to3\pgen2\driver.py", line 104, in parse_string
+    return self.parse_tokens(tokens, debug)
+  File "C:\Users\iryna\AppData\Local\Programs\Python\Python37-32\lib\lib2to3\pgen2\driver.py", line 72, in parse_tokens
+    if p.addtoken(type, value, (prefix, start)):
+  File "C:\Users\iryna\AppData\Local\Programs\Python\Python37-32\lib\lib2to3\pgen2\parse.py", line 159, in addtoken
+    raise ParseError("bad input", type, value, context)
+lib2to3.pgen2.parse.ParseError: bad input: type=1, value='row', context=('    ', (29, 4))
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "linter\__main__.py", line 93, in <module>
+    src = fixers_api.Pre2to3FixerRun(src, {'fixers': ['quotes']})
+  File "linter\yapf_contrib\fixers\fixers_api.py", line 45, in Pre2to3FixerRun
+    return _Run2to3Fixers(original_source, options=options)
+  File "linter\yapf_contrib\fixers\fixers_api.py", line 75, in _Run2to3Fixers
+    return '{}'.format(tool.refactor_string(source, name=''))
+  File "C:\Users\iryna\AppData\Local\Programs\Python\Python37-32\lib\lib2to3\refactor.py", line 361, in refactor_string
+    name, err.__class__.__name__, err)
+  File "C:\Users\iryna\AppData\Local\Programs\Python\Python37-32\lib\lib2to3\refactor.py", line 358, in refactor_string
+    tree = self.driver.parse_string(data)
+  File "C:\Users\iryna\AppData\Local\Programs\Python\Python37-32\lib\lib2to3\pgen2\driver.py", line 104, in parse_string
+    return self.parse_tokens(tokens, debug)
+  File "C:\Users\iryna\AppData\Local\Programs\Python\Python37-32\lib\lib2to3\pgen2\driver.py", line 72, in parse_tokens
+    if p.addtoken(type, value, (prefix, start)):
+  File "C:\Users\iryna\AppData\Local\Programs\Python\Python37-32\lib\lib2to3\pgen2\parse.py", line 159, in addtoken
+    raise ParseError("bad input", type, value, context)
+lib2to3.pgen2.parse.ParseError: bad input: type=1, value='row', context=('    ', (29, 4))
+
+Traceback (most recent call last):
+  File "C:\Users\iryna\AppData\Local\Programs\Python\Python37-32\lib\site-packages\yapf\yapflib\pytree_utils.py", line 115, in ParseCodeToTree
+    tree = parser_driver.parse_string(code, debug=False)
+  File "C:\Users\iryna\AppData\Local\Programs\Python\Python37-32\lib\lib2to3\pgen2\driver.py", line 104, in parse_string
+    return self.parse_tokens(tokens, debug)
+  File "C:\Users\iryna\AppData\Local\Programs\Python\Python37-32\lib\lib2to3\pgen2\driver.py", line 72, in parse_tokens
+    if p.addtoken(type, value, (prefix, start)):
+  File "C:\Users\iryna\AppData\Local\Programs\Python\Python37-32\lib\lib2to3\pgen2\parse.py", line 159, in addtoken
+    raise ParseError("bad input", type, value, context)
+lib2to3.pgen2.parse.ParseError: bad input: type=1, value='row', context=('    ', (29, 4))
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\iryna\AppData\Local\Programs\Python\Python37-32\lib\site-packages\yapf\yapflib\pytree_utils.py", line 121, in ParseCodeToTree
+    tree = parser_driver.parse_string(code, debug=False)
+  File "C:\Users\iryna\AppData\Local\Programs\Python\Python37-32\lib\lib2to3\pgen2\driver.py", line 104, in parse_string
+    return self.parse_tokens(tokens, debug)
+  File "C:\Users\iryna\AppData\Local\Programs\Python\Python37-32\lib\lib2to3\pgen2\driver.py", line 72, in parse_tokens
+    if p.addtoken(type, value, (prefix, start)):
+  File "C:\Users\iryna\AppData\Local\Programs\Python\Python37-32\lib\lib2to3\pgen2\parse.py", line 159, in addtoken
+    raise ParseError("bad input", type, value, context)
+lib2to3.pgen2.parse.ParseError: bad input: type=1, value='row', context=('    ', (29, 4))
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\iryna\AppData\Local\Programs\Python\Python37-32\lib\runpy.py", line 193, in _run_module_as_main
+    "__main__", mod_spec)
+  File "C:\Users\iryna\AppData\Local\Programs\Python\Python37-32\lib\runpy.py", line 85, in _run_code
+    exec(code, run_globals)
+  File "linter\__main__.py", line 102, in <module>
+    src, _changed = yapf_api.FormatCode(src, file, 'yapf')
+  File "C:\Users\iryna\AppData\Local\Programs\Python\Python37-32\lib\site-packages\yapf\yapflib\yapf_api.py", line 147, in FormatCode
+    tree = pytree_utils.ParseCodeToTree(unformatted_source)
+  File "C:\Users\iryna\AppData\Local\Programs\Python\Python37-32\lib\site-packages\yapf\yapflib\pytree_utils.py", line 127, in ParseCodeToTree
+    raise e
+  File "C:\Users\iryna\AppData\Local\Programs\Python\Python37-32\lib\site-packages\yapf\yapflib\pytree_utils.py", line 125, in ParseCodeToTree
+    ast.parse(code)
+  File "C:\Users\iryna\AppData\Local\Programs\Python\Python37-32\lib\ast.py", line 35, in parse
+    return compile(source, filename, mode, PyCF_ONLY_AST)
+  File "<unknown>", line 29
+    row[-1] = -1
+      ^
+IndentationError: expected an indented block
+
+4) For this:
+for row in train:
+    if row[-1] == 2:
+      row[-1] = -1
+  else:
+    row[-1] = 1
+
+We get this:
+
+ERROR:root:unindent does not match any outer indentation level (<tokenize>, line 30)
+Error trying to fix quotes: Traceback (most recent call last):
+  File "linter\__main__.py", line 93, in <module>
+    src = fixers_api.Pre2to3FixerRun(src, {'fixers': ['quotes']})
+  File "linter\yapf_contrib\fixers\fixers_api.py", line 45, in Pre2to3FixerRun
+    return _Run2to3Fixers(original_source, options=options)
+  File "linter\yapf_contrib\fixers\fixers_api.py", line 70, in _Run2to3Fixers
+    return '{}'.format(tool.refactor_string(source, name=''))
+  File "C:\Users\iryna\AppData\Local\Programs\Python\Python37-32\lib\lib2to3\refactor.py", line 361, in refactor_string
+    name, err.__class__.__name__, err)
+  File "C:\Users\iryna\AppData\Local\Programs\Python\Python37-32\lib\lib2to3\refactor.py", line 358, in refactor_string
+    tree = self.driver.parse_string(data)
+  File "C:\Users\iryna\AppData\Local\Programs\Python\Python37-32\lib\lib2to3\pgen2\driver.py", line 104, in parse_string
+    return self.parse_tokens(tokens, debug)
+  File "C:\Users\iryna\AppData\Local\Programs\Python\Python37-32\lib\lib2to3\pgen2\driver.py", line 48, in parse_tokens
+    for quintuple in tokens:
+  File "C:\Users\iryna\AppData\Local\Programs\Python\Python37-32\lib\lib2to3\pgen2\tokenize.py", line 427, in generate_tokens
+    ("<tokenize>", lnum, pos, line))
+  File "<tokenize>", line 30
+    else:
+    ^
+IndentationError: unindent does not match any outer indentation level
+
+Traceback (most recent call last):
+  File "C:\Users\iryna\AppData\Local\Programs\Python\Python37-32\lib\runpy.py", line 193, in _run_module_as_main
+    "__main__", mod_spec)
+  File "C:\Users\iryna\AppData\Local\Programs\Python\Python37-32\lib\runpy.py", line 85, in _run_code
+    exec(code, run_globals)
+  File "linter\__main__.py", line 102, in <module>
+    src, _changed = yapf_api.FormatCode(src, file, 'yapf')
+  File "C:\Users\iryna\AppData\Local\Programs\Python\Python37-32\lib\site-packages\yapf\yapflib\yapf_api.py", line 147, in FormatCode
+    tree = pytree_utils.ParseCodeToTree(unformatted_source)
+  File "C:\Users\iryna\AppData\Local\Programs\Python\Python37-32\lib\site-packages\yapf\yapflib\pytree_utils.py", line 115, in ParseCodeToTree
+    tree = parser_driver.parse_string(code, debug=False)
+  File "C:\Users\iryna\AppData\Local\Programs\Python\Python37-32\lib\lib2to3\pgen2\driver.py", line 104, in parse_string
+    return self.parse_tokens(tokens, debug)
+  File "C:\Users\iryna\AppData\Local\Programs\Python\Python37-32\lib\lib2to3\pgen2\driver.py", line 48, in parse_tokens
+    for quintuple in tokens:
+  File "C:\Users\iryna\AppData\Local\Programs\Python\Python37-32\lib\lib2to3\pgen2\tokenize.py", line 427, in generate_tokens
+    ("<tokenize>", lnum, pos, line))
+  File "<tokenize>", line 30
+    else:
+    ^
+IndentationError: unindent does not match any outer indentation level
+
+5) 

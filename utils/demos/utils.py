@@ -6,6 +6,9 @@ from typing import Callable
 import numpy as np
 import colorsys
 import cv2
+from contextlib import closing
+import multiprocessing as mp
+import os
 
 
 def get_device(policy):
@@ -154,6 +157,23 @@ def int_scale_boxes(boxes, classes, width, height):
   classes = tf.cast(classes, dtype=tf.int32)
   return boxes, classes
 
+def shared_to_numpy(shared_arr, dtype, shape):
+    """Get a NumPy array from a shared memory buffer, with a given dtype and shape.
+    No copy is involved, the array reflects the underlying shared buffer."""
+    return np.frombuffer(shared_arr, dtype=dtype).reshape(shape)
+
+def create_shared_array(dtype, shape):
+    """Create a new shared array. Return the shared array pointer, and a NumPy array view to it.
+    Note that the buffer values are not initialized.
+    """
+    dtype = np.dtype(dtype)
+    # Get a ctype type from the NumPy dtype.
+    cdtype = np.ctypeslib.as_ctypes_type(dtype)
+    # Create the RawArray instance.
+    shared_arr = mp.RawArray(cdtype, sum(shape))
+    # Get a NumPy array view.
+    arr = shared_to_numpy(shared_arr, dtype, shape)
+    return shared_arr, arr
 
 class DrawBoxes(object):
   def __init__(self, classes=80, labels=None, display_names=True, thickness=2):
@@ -196,14 +216,45 @@ class DrawBoxes(object):
     else:
       return draw_box
 
+  # def _draw(self, image, boxes, classes, conf):
+  #   i = 0
+  #   for i in range(boxes.shape[0]):
+  #     if self._draw_fn(image, boxes[i], classes[i], conf[i]):
+  #       i += 1
+  #     else:
+  #       return i
+  #   return i
+
+  def _init_proc(shared_arr_, boxes_, classes_, conf_):
+    # The shared array pointer is a global variable so that it can be accessed by the
+    # child processes. It is a tuple (pointer, dtype, shape).
+    global shared_arr, boxes, classes, conf
+    shared_arr = shared_arr_
+    boxes = boxes_
+    classifcs = classes_ 
+    confens = conf_
+
+  def _draw_parallel(index):
+    box = boxes[index]
+    classes = classifcs[index]
+    conf = confens[index]
+    image = shared_to_numpy(*shared_arr)
+    image = self._draw_fn(image, box, classes, conf)
+    return 
+
   def _draw(self, image, boxes, classes, conf):
-    i = 0
-    for i in range(boxes.shape[0]):
-      if self._draw_fn(image, boxes[i], classes[i], conf[i]):
-        i += 1
-      else:
-        return i
-    return i
+    n_processes = os.cpu_count()
+    index_map = list(range(boxes.shape[0])) 
+    shared_arr, arr = create_shared_array(image.dtype, image.shape)
+    arr.flat[:] = image.flat[:]
+    print(f"multiprocess draw {n_processes}")
+    with closing(mp.Pool(
+                  n_processes, 
+                  initializer=self._init_proc, 
+                  initargs=((shared_arr, image.dtype, image.shape), boxes, classes, conf, ))) as p:
+
+      p.map(parallel_function, index_map)
+    return n_processes
 
   def __call__(self, image, results):
     """ expectoed format = {bbox: , classes: , "confidence": }"""

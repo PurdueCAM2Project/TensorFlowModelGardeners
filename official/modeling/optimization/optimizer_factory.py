@@ -20,7 +20,7 @@ import gin
 import tensorflow as tf
 import tensorflow_addons.optimizers as tfa_optimizers
 
-from official.modeling.optimization import ema_optimizer
+from official.modeling.optimization import ema_optimizer, SGDAccumulated
 from official.modeling.optimization import lr_schedule
 from official.modeling.optimization.configs import optimization_config as opt_cfg
 from official.nlp import optimization as nlp_optimization
@@ -30,7 +30,8 @@ OPTIMIZERS_CLS = {
     'adam': tf.keras.optimizers.Adam,
     'adamw': nlp_optimization.AdamWeightDecay,
     'lamb': tfa_optimizers.LAMB,
-    'rmsprop': tf.keras.optimizers.RMSprop
+    'rmsprop': tf.keras.optimizers.RMSprop,
+    'sgd_accum': SGDAccumulated.SGDAccumulated
 }
 
 LR_CLS = {
@@ -38,6 +39,7 @@ LR_CLS = {
     'polynomial': tf.keras.optimizers.schedules.PolynomialDecay,
     'exponential': tf.keras.optimizers.schedules.ExponentialDecay,
     'cosine': tf.keras.experimental.CosineDecay,
+    'cosine_epoch': lr_schedule.CosineEpoch,
     'power': lr_schedule.DirectPowerDecay,
     'power_linear': lr_schedule.PowerAndLinearDecay,
 }

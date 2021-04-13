@@ -1,0 +1,120 @@
+runtime:
+  distribution_strategy: mirrored
+  mixed_precision_dtype: float16
+  loss_scale: "dynamic"
+  num_gpus: 1
+task:
+  model:
+    base: 
+      backbone:
+        type: 'darknet'
+        darknet:
+          model_id: 'cspdarknet53'
+      decoder:
+        version: v4
+        type: csp
+      darknet_weights_file: 'cache://yolov4-csp-2.weights'
+      darknet_weights_cfg: 'cache://yolov4-csp.cfg'
+    num_classes: 80
+    _boxes: ['[12.0, 16.0]', '[19.0, 36.0]', '[40.0, 28.0]', '[36.0, 75.0]', '[76.0,55.0]', '[72.0, 146.0]', '[142.0, 110.0]', '[192.0, 243.0]', '[459.0, 401.0]']
+    _input_size: null #[512, 512, 3]
+    boxes_per_scale: 3
+    max_level: 5
+    min_level: 3
+    use_sam: false
+    norm_activation:
+      activation: mish
+      norm_epsilon: 0.001
+      norm_momentum: 0.99
+      use_sync_bn: false
+    decoder_activation: leaky
+    filter:
+      ignore_thresh:
+        '5': 0.7
+        '4': 0.7
+        '3': 0.7
+      truth_thresh:
+        '5': 1.0
+        '4': 1.0
+        '3': 1.0
+      loss_type:  
+        '5': ciou
+        '4': ciou
+        '3': ciou
+      iou_normalizer: 
+        '5': 0.07
+        '4': 0.07
+        '3': 0.07
+      cls_normalizer: 
+        '5': 1.0
+        '4': 1.0
+        '3': 1.0
+      obj_normalizer: 
+        '5': 1.0
+        '4': 1.0
+        '3': 1.0
+      # max_delta: 
+      #   '5': 5.0
+      #   '4': 5.0 
+      #   '3': 5.0
+      objectness_smooth: 
+        '5': true
+        '4': true
+        '3': true
+      new_cords:
+        '5': true
+        '4': true
+        '3': true
+      scale_xy:
+        '5': 2.0
+        '4': 2.0 
+        '3': 2.0
+      max_boxes: 200
+      use_nms: false
+      iou_thresh: 0.25
+      nms_thresh: 0.9
+      use_reduction_sum: false
+  validation_data:
+    global_batch_size: 8
+    tfds_data_dir: '/media/vbanna/DATA_SHARE/tfds'
+    tfds_download: true
+    tfds_name: coco
+    tfds_split: validation
+    dtype: float16
+    input_path: ''
+    is_training: false
+    parser:
+      fixed_size: true
+      image_h: 512
+      image_w: 512
+      use_tie_breaker: true
+    shuffle_buffer_size: 10000
+  weight_decay: 0.0005
+  init_checkpoint: ''
+  annotation_file: null
+  gradient_clip_norm: 0.0
+  load_darknet_weights: true
+  darknet_load_decoder: true
+trainer:
+  train_steps: 10000 # 160 epochs at 64 batchsize -> 500500 * 64/16
+  validation_steps: 625 # 5063 #625
+  steps_per_loop: 10000
+  validation_interval: 1
+  summary_interval: 10000
+  checkpoint_interval: 10000
+  optimizer_config:
+    learning_rate:
+      type: stepwise
+      stepwise:
+        boundaries: [800000, 900000] # [400000, 450000]
+        name: PiecewiseConstantDecay
+        values: [0.00065, 0.000065, 0.0000065] #[0.0013, 0.00013, 0.000013]
+    optimizer:
+      type: sgd
+      sgd:
+        momentum: 0.949
+        name: SGD
+    warmup:
+      type: 'linear'
+      linear:
+        warmup_steps: 1000 #learning rate rises from 0 to 0.0013 over 1000 steps

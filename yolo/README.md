@@ -52,9 +52,13 @@ Our goal with this model conversion is to provide highly versatile implementatio
 | :--------------: | :--------------: |
 | Yolo-v3          | Darknet53        |
 | Yolo-v3 tiny     | CSPDarknet53     |
-| Yolo-v3 spp      |
-| Yolo-v4          |
+| Yolo-v3 spp      | CSPDarknet-large     |
+| Yolo-v4          | CSPDarknet-tiny     |
 | Yolo-v4 tiny     |
+| Yolo-v4 csp     |
+| Scaled-Yolo-v4 p5 |
+| Scaled-Yolo-v4 p6 |
+| Scaled-Yolo-v4 p7 |
 
 For all Standard implementations, we provided scripts to load the weights into the Tensorflow implementation directly from the original Darknet Implementation, provided that you have a yolo**.cfg file, and the corresponding yolo**.weights file.
 

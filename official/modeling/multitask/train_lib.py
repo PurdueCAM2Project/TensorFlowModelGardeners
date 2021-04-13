@@ -20,12 +20,13 @@ import orbit
 import tensorflow as tf
 from official.core import base_task
 from official.core import base_trainer as core_lib
+from official.core import train_utils
 from official.modeling.multitask import configs
 from official.modeling.multitask import evaluator as evaluator_lib
 from official.modeling.multitask import multitask
 
 
-def run_experiment_wtih_multitask_eval(
+def run_experiment_with_multitask_eval(
     *,
     distribution_strategy: tf.distribute.Strategy,
     train_task: base_task.Task,
@@ -73,7 +74,9 @@ def run_experiment_wtih_multitask_eval(
       evaluator = evaluator_lib.MultiTaskEvaluator(
           task=eval_tasks,
           model=model,
-          global_step=trainer.global_step if is_training else None)
+          global_step=trainer.global_step if is_training else None,
+          checkpoint_exporter=train_utils.maybe_create_best_ckpt_exporter(
+              params, model_dir))
     else:
       evaluator = None
 

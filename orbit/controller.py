@@ -259,7 +259,7 @@ class Controller:
     elapsed = time.time() - start
 
     _log(f" eval | step: {current_step: 6d} | "
-         f"eval time: {elapsed: 6.1f} | "
+         f"eval time: {elapsed: 6.1f} sec | "
          f"output: {_format_output(eval_output)}")
 
     self.eval_summary_manager.write_summaries(eval_output)
@@ -449,6 +449,7 @@ class Controller:
     if self.checkpoint_manager and self.checkpoint_manager.checkpoint_interval:
       ckpt_path = self.checkpoint_manager.save(
           checkpoint_number=self.global_step.numpy(),
+          
           check_interval=check_interval)
       if ckpt_path is not None:
         _log(f"saved checkpoint to {ckpt_path}.")

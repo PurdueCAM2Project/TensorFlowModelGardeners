@@ -1,4 +1,4 @@
-# Copyright 2020 The TensorFlow Authors. All Rights Reserved.
+# Copyright 2021 The TensorFlow Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ==============================================================================
+
 """Preprocessing ops."""
 
 import math
@@ -26,12 +26,10 @@ CENTER_CROP_FRACTION = 0.875
 
 def clip_or_pad_to_fixed_size(input_tensor, size, constant_values=0):
   """Pads data to a fixed length at the first dimension.
-
   Args:
     input_tensor: `Tensor` with any dimension.
     size: `int` number for the first dimension of output Tensor.
     constant_values: `int` value assigned to the paddings.
-
   Returns:
     `Tensor` with the first dimension padded to `size`.
   """
@@ -81,17 +79,14 @@ def normalize_image(image,
 
 def compute_padded_size(desired_size, stride):
   """Compute the padded size given the desired size and the stride.
-
   The padded size will be the smallest rectangle, such that each dimension is
   the smallest multiple of the stride which is larger than the desired
   dimension. For example, if desired_size = (100, 200) and stride = 32,
   the output padded_size = (128, 224).
-
   Args:
     desired_size: a `Tensor` or `int` list/tuple of two elements representing
       [height, width] of the target output image size.
     stride: an integer, the stride of the backbone network.
-
   Returns:
     padded_size: a `Tensor` or `int` list/tuple of two elements representing
       [height, width] of the padded output image size.
@@ -115,16 +110,13 @@ def resize_and_crop_image(image,
                           seed=1,
                           method=tf.image.ResizeMethod.BILINEAR):
   """Resizes the input image to output size (RetinaNet style).
-
   Resize and pad images given the desired output size of the image and
   stride size.
-
   Here are the preprocessing steps.
   1. For a given image, keep its aspect ratio and rescale the image to make it
      the largest rectangle to be bounded by the rectangle specified by the
      `desired_size`.
   2. Pad the rescaled image to the padded_size.
-
   Args:
     image: a `Tensor` of shape [height, width, 3] representing an image.
     desired_size: a `Tensor` or `int` list/tuple of two elements representing
@@ -138,7 +130,6 @@ def resize_and_crop_image(image,
       random scale applied to desired_size for training scale jittering.
     seed: seed for random scale jittering.
     method: function to resize input image to scaled image.
-
   Returns:
     output_image: `Tensor` of shape [height, width, 3] where [height, width]
       equals to `output_size`.
@@ -208,17 +199,14 @@ def resize_and_crop_image_v2(image,
                              seed=1,
                              method=tf.image.ResizeMethod.BILINEAR):
   """Resizes the input image to output size (Faster R-CNN style).
-
   Resize and pad images given the specified short / long side length and the
   stride size.
-
   Here are the preprocessing steps.
   1. For a given image, keep its aspect ratio and first try to rescale the short
      side of the original image to `short_side`.
   2. If the scaled image after 1 has a long side that exceeds `long_side`, keep
      the aspect ratio and rescal the long side of the image to `long_side`.
   2. Pad the rescaled image to the padded_size.
-
   Args:
     image: a `Tensor` of shape [height, width, 3] representing an image.
     short_side: a scalar `Tensor` or `int` representing the desired short side
@@ -234,7 +222,6 @@ def resize_and_crop_image_v2(image,
       random scale applied to desired_size for training scale jittering.
     seed: seed for random scale jittering.
     method: function to resize input image to scaled image.
-
   Returns:
     output_image: `Tensor` of shape [height, width, 3] where [height, width]
       equals to `output_size`.
@@ -304,17 +291,14 @@ def resize_and_crop_image_v2(image,
 
 def center_crop_image(image):
   """Center crop a square shape slice from the input image.
-
   It crops a square shape slice from the image. The side of the actual crop
   is 224 / 256 = 0.875 of the short side of the original image. References:
   [1] Very Deep Convolutional Networks for Large-Scale Image Recognition
       https://arxiv.org/abs/1409.1556
   [2] Deep Residual Learning for Image Recognition
       https://arxiv.org/abs/1512.03385
-
   Args:
     image: a Tensor of shape [height, width, 3] representing the input image.
-
   Returns:
     cropped_image: a Tensor representing the center cropped image.
   """
@@ -332,22 +316,18 @@ def center_crop_image(image):
 
 def center_crop_image_v2(image_bytes, image_shape):
   """Center crop a square shape slice from the input image.
-
   It crops a square shape slice from the image. The side of the actual crop
   is 224 / 256 = 0.875 of the short side of the original image. References:
   [1] Very Deep Convolutional Networks for Large-Scale Image Recognition
       https://arxiv.org/abs/1409.1556
   [2] Deep Residual Learning for Image Recognition
       https://arxiv.org/abs/1512.03385
-
   This is a faster version of `center_crop_image` which takes the original
   image bytes and image size as the inputs, and partially decode the JPEG
   bytes according to the center crop.
-
   Args:
     image_bytes: a Tensor of type string representing the raw image bytes.
     image_shape: a Tensor specifying the shape of the raw image.
-
   Returns:
     cropped_image: a Tensor representing the center cropped image.
   """
@@ -370,7 +350,6 @@ def random_crop_image(image,
                       max_attempts=10,
                       seed=1):
   """Randomly crop an arbitrary shaped slice from the input image.
-
   Args:
     image: a Tensor of shape [height, width, 3] representing the input image.
     aspect_ratio_range: a list of floats. The cropped area of the image must
@@ -381,7 +360,6 @@ def random_crop_image(image,
       image of the specified constraints. After max_attempts failures, return
       the entire image.
     seed: the seed of the random generator.
-
   Returns:
     cropped_image: a Tensor representing the random cropped image. Can be the
       original image if max_attempts is exhausted.
@@ -406,11 +384,9 @@ def random_crop_image_v2(image_bytes,
                          max_attempts=10,
                          seed=1):
   """Randomly crop an arbitrary shaped slice from the input image.
-
   This is a faster version of `random_crop_image` which takes the original
   image bytes and image size as the inputs, and partially decode the JPEG
   bytes according to the generated crop.
-
   Args:
     image_bytes: a Tensor of type string representing the raw image bytes.
     image_shape: a Tensor specifying the shape of the raw image.
@@ -422,7 +398,6 @@ def random_crop_image_v2(image_bytes,
       image of the specified constraints. After max_attempts failures, return
       the entire image.
     seed: the seed of the random generator.
-
   Returns:
     cropped_image: a Tensor representing the random cropped image. Can be the
       original image if max_attempts is exhausted.
@@ -449,7 +424,6 @@ def resize_and_crop_boxes(boxes,
                           output_size,
                           offset):
   """Resizes boxes to output size with scale and offset.
-
   Args:
     boxes: `Tensor` of shape [N, 4] representing ground truth boxes.
     image_scale: 2D float `Tensor` representing scale factors that apply to
@@ -458,7 +432,6 @@ def resize_and_crop_boxes(boxes,
       output image size.
     offset: 2D `Tensor` representing top-left corner [y0, x0] to crop scaled
       boxes.
-
   Returns:
     boxes: `Tensor` of shape [N, 4] representing the scaled boxes.
   """
@@ -476,7 +449,6 @@ def resize_and_crop_masks(masks,
                           output_size,
                           offset):
   """Resizes boxes to output size with scale and offset.
-
   Args:
     masks: `Tensor` of shape [N, H, W, 1] representing ground truth masks.
     image_scale: 2D float `Tensor` representing scale factors that apply to
@@ -485,7 +457,6 @@ def resize_and_crop_masks(masks,
       output image size.
     offset: 2D `Tensor` representing top-left corner [y0, x0] to crop scaled
       boxes.
-
   Returns:
     masks: `Tensor` of shape [N, H, W, 1] representing the scaled masks.
   """

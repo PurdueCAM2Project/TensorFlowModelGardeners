@@ -1,0 +1,67 @@
+runtime:
+  distribution_strategy: 'mirrored'
+  mixed_precision_dtype: 'float16'
+  loss_scale: "dynamic"
+  num_gpus: 1
+task:
+  model:
+    num_classes: 1000
+    input_size: [256, 256, 3]
+    backbone:
+      type: 'darknet'
+      darknet:
+        model_id: 'csp-large'
+    norm_activation:
+      activation: 'mish'  
+      use_sync_bn: true
+    min_level: 3
+    max_level: 7
+    darknet_weights_file: ''
+    darknet_weights_cfg: ''
+    subdivisions: 16
+  losses:
+    l2_weight_decay: 0.0005
+    one_hot: True
+    label_smoothing: 0.1
+  train_data:
+    tfds_name: imagenet2012
+    tfds_split: train
+    #input_path: 'imagenet-2012-tfrecord/train*'
+    is_training: true
+    global_batch_size: 128
+    dtype: 'float16'
+    parser:
+      aug_rand: true
+  validation_data:
+    tfds_name: imagenet2012
+    tfds_split: validation
+    #input_path: 'imagenet-2012-tfrecord/valid*'
+    is_training: true
+    global_batch_size: 128
+    dtype: 'float16'
+    drop_remainder: false
+    parser:
+      aug_rand: true
+trainer:
+  train_steps: 1200000 # epochs: 120
+  validation_steps: 400 # size of validation data
+  validation_interval: 10000
+  steps_per_loop: 10000
+  summary_interval: 10000
+  checkpoint_interval: 10000
+  optimizer_config:
+    optimizer:
+      type: 'sgd'
+      sgd:
+        momentum: 0.9
+    learning_rate:
+      type: 'polynomial'
+      polynomial:
+        initial_learning_rate: 0.1
+        end_learning_rate: 0.0001
+        power: 4.0
+        decay_steps: 1190000
+    warmup:
+      type: 'linear'
+      linear:
+        warmup_steps: 1000 #learning rate rises from 0 to 0.1 over 1000 steps

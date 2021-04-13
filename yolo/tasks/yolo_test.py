@@ -6,10 +6,10 @@ from official.modeling import optimization
 import tensorflow as tf
 from absl.testing import parameterized
 from yolo.utils.run_utils import prep_gpu
-try:
-  prep_gpu()
-except BaseException:
-  print("GPUs ready")
+# try:
+#   prep_gpu()
+# except BaseException:
+#   print("GPUs ready")
 
 
 class YoloTaskTest(tf.test.TestCase, parameterized.TestCase):

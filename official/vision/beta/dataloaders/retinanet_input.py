@@ -1,4 +1,4 @@
-# Copyright 2020 The TensorFlow Authors. All Rights Reserved.
+# Copyright 2021 The TensorFlow Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,9 +11,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ==============================================================================
-"""Data parser and processing for RetinaNet.
 
+"""Data parser and processing for RetinaNet.
 Parse image and ground truths in a dataset to training targets and package them
 into (image, labels) tuple for RetinaNet.
 """
@@ -50,7 +49,6 @@ class Parser(parser.Parser):
                dtype='bfloat16',
                mode=None):
     """Initializes parameters for parsing annotations in the dataset.
-
     Args:
       output_size: `Tensor` or `list` for [height, width] of output image. The
         output_size should be divided by the largest feature stride 2^max_level.
@@ -137,7 +135,7 @@ class Parser(parser.Parser):
     image_shape = tf.shape(input=image)[0:2]
 
     # Normalizes image with mean and std pixel values.
-    image = preprocess_ops.normalize_image(image)
+    image = image/255 #preprocess_ops.normalize_image(image)
 
     # Flips image randomly during training.
     if self._aug_rand_hflip:
@@ -150,8 +148,7 @@ class Parser(parser.Parser):
     image, image_info = preprocess_ops.resize_and_crop_image(
         image,
         self._output_size,
-        padded_size=preprocess_ops.compute_padded_size(self._output_size,
-                                                       2**self._max_level),
+        padded_size= self._output_size,     #preprocess_ops.compute_padded_size(self._output_size, 2**self._max_level),
         aug_scale_min=self._aug_scale_min,
         aug_scale_max=self._aug_scale_max)
     image_height, image_width, _ = image.get_shape().as_list()
@@ -185,6 +182,20 @@ class Parser(parser.Parser):
       image = tf.cast(image, dtype=tf.bfloat16)
 
     # Packs labels for model_fn outputs.
+
+    groundtruths = {
+        'source_id': data['source_id'],
+        'height': data['height'],
+        'width': data['width'],
+        'num_detections': tf.shape(data['groundtruth_classes']),
+        'boxes': box_ops.normalize_boxes(boxes, tf.shape(image)[:2]),
+        'classes': classes,
+        'areas': data['groundtruth_area'],
+        'is_crowds': tf.cast(data['groundtruth_is_crowd'], tf.int32),
+    }
+    groundtruths = utils.pad_groundtruths_to_fixed_size(
+        groundtruths, self._max_num_instances)
+
     labels = {
         'cls_targets': cls_targets,
         'box_targets': box_targets,
@@ -192,6 +203,8 @@ class Parser(parser.Parser):
         'cls_weights': cls_weights,
         'box_weights': box_weights,
         'image_info': image_info,
+        'bbox': groundtruths['boxes'], 
+        'classes': groundtruths['classes'],
     }
     return image, labels
 
@@ -206,7 +219,8 @@ class Parser(parser.Parser):
     image_shape = tf.shape(input=image)[0:2]
 
     # Normalizes image with mean and std pixel values.
-    image = preprocess_ops.normalize_image(image)
+    # image = preprocess_ops.normalize_image(image)
+    image = image/255
 
     # Converts boxes from normalized coordinates to pixel coordinates.
     boxes = box_ops.denormalize_boxes(boxes, image_shape)
@@ -256,9 +270,8 @@ class Parser(parser.Parser):
         'width': data['width'],
         'num_detections': tf.shape(data['groundtruth_classes']),
         'image_info': image_info,
-        'boxes': box_ops.denormalize_boxes(
-            data['groundtruth_boxes'], image_shape),
-        'classes': data['groundtruth_classes'],
+        'boxes': box_ops.normalize_boxes(boxes, tf.shape(image)[:2]),
+        'classes': classes,
         'areas': data['groundtruth_area'],
         'is_crowds': tf.cast(data['groundtruth_is_crowd'], tf.int32),
     }
@@ -276,5 +289,7 @@ class Parser(parser.Parser):
         'box_weights': box_weights,
         'image_info': image_info,
         'groundtruths': groundtruths,
+        'bbox': groundtruths['boxes'], 
+        'classes': groundtruths['classes'],
     }
     return image, labels

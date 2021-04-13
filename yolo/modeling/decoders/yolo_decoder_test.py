@@ -121,6 +121,7 @@ class YoloDecoderTest(parameterized.TestCase, tf.test.TestCase):
 def build_yolo_decoder(input_specs, type):
   if type == 'a':
     model = decoders.YoloDecoder(
+        input_specs=input_specs,
         embed_spp=False,
         embed_fpn=False,
         max_level_process_len=2,
@@ -128,6 +129,7 @@ def build_yolo_decoder(input_specs, type):
         activation='mish')
   elif type == 'b':
     model = decoders.YoloDecoder(
+        input_specs=input_specs,
         embed_spp=True,
         embed_fpn=False,
         max_level_process_len=None,
@@ -135,12 +137,13 @@ def build_yolo_decoder(input_specs, type):
         activation='mish')
   else:
     model = decoders.YoloDecoder(
+        input_specs=input_specs,
         embed_spp=False,
         embed_fpn=False,
         max_level_process_len=None,
         path_process_len=6,
         activation='mish')
-  model.build(input_specs)
+  # model.build(input_specs)
   return model
 
 

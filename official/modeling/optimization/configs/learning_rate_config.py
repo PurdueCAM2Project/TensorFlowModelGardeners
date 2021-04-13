@@ -128,6 +128,26 @@ class CosineLrConfig(base_config.Config):
   decay_steps: Optional[int] = None
   alpha: float = 0.0
 
+@dataclasses.dataclass
+class CosineLrEpochConfig(base_config.Config):
+  """Configuration for Cosine learning rate decay.
+
+  This class is a containers for the cosine learning rate decay configs,
+  tf.keras.experimental.CosineDecay.
+
+  Attributes:
+    name: The name of the learning rate schedule. Defaults to CosineDecay.
+    initial_learning_rate: A float. The initial learning rate. Defaults to None.
+    decay_steps: A positive integer that is used for decay computation. Defaults
+      to None.
+    alpha: A float.  Minimum learning rate value as a fraction of
+      initial_learning_rate.
+  """
+  name: str = 'CosineEpochDecay'
+  initial_learning_rate: Optional[float] = None
+  decay_steps: Optional[int] = None
+  steps_per_epoch: int = 1.0
+  alpha: float = 0.0
 
 @dataclasses.dataclass
 class DirectPowerLrConfig(base_config.Config):

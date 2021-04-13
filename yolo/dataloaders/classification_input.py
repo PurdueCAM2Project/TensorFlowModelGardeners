@@ -9,18 +9,6 @@ from official.vision.beta.dataloaders import parser
 from official.vision.beta.ops import preprocess_ops
 from yolo.ops import preprocessing_ops
 
-# def rand_uniform_strong(minval, maxval, dtype = tf.float32):
-#   if minval > maxval:
-#     minval, maxval = maxval, minval
-#   return tf.random.uniform([], minval = minval, maxval = maxval, dtype = dtype)
-
-# def rand_scale(val, dtype = tf.float32):
-#   scale = rand_uniform_strong(1, val, dtype = dtype)
-#   do_ret = tf.random.uniform([], minval = 0, maxval = 1, dtype=tf.int32)
-#   if (do_ret == 1):
-#     return scale
-#   return 1.0/scale
-
 
 class Parser(parser.Parser):
   """Parser to parse an image and its annotations into a dictionary of tensors."""
@@ -54,8 +42,8 @@ class Parser(parser.Parser):
         hue.
       aug_rand_aspect: `bool`, if True, augment training with random
         aspect.
-      scale: 'list', `Tensor` or `list` for [low, high] of the bounds of the random
-        scale.
+      scale: 'list', `Tensor` or `list` for [low, high] of the bounds of the 
+        random scale.
       seed: an `int` for the seed used by tf.random
     """
     self._output_size = output_size
@@ -66,7 +54,11 @@ class Parser(parser.Parser):
     self._aug_rand_hue = aug_rand_hue
     self._num_classes = num_classes
     self._aug_rand_aspect = aug_rand_aspect
-    self._scale = scale
+
+    scaler = 256 if self._output_size[0] == None else self._output_size[0]
+    self._scale = tf.cast(((tf.convert_to_tensor(scale) / 256) * scaler),
+                          tf.int32)
+
     self._seed = seed
     if dtype == 'float32':
       self._dtype = tf.float32
@@ -91,50 +83,46 @@ class Parser(parser.Parser):
     w = tf.cast(tf.shape(image)[0], tf.float32)
     h = tf.cast(tf.shape(image)[1], tf.int32)
 
-    do_blur = tf.random.uniform([],
-                                minval=0,
-                                maxval=1,
-                                seed=self._seed,
-                                dtype=tf.float32)
-    if do_blur > 0.9:
-      image = tfa.image.gaussian_filter2d(image, filter_shape=7, sigma=15)
-    elif do_blur > 0.7:
-      image = tfa.image.gaussian_filter2d(image, filter_shape=5, sigma=6)
-    elif do_blur > 0.4:
-      image = tfa.image.gaussian_filter2d(image, filter_shape=5, sigma=3)
+    # slow as balls 20 second addition at batch size 128
+    # image = tf.image.rgb_to_hsv(image)
+    # i_h, i_s, i_v = tf.split(image, 3, axis=-1)
 
-    image = tf.image.rgb_to_hsv(image)
-    i_h, i_s, i_v = tf.split(image, 3, axis=-1)
+    # if self._aug_rand_hue:
+    #   delta = 0.1 #preprocessing_ops.rand_uniform_strong(-0.1, 0.1)
+    #   i_h = i_h + delta  # Hue
+    #   i_h = tf.clip_by_value(i_h, 0.0, 1.0)
+    # if self._aug_rand_saturation:
+    #   delta = 0.75 #preprocessing_ops.rand_scale(0.75)
+    #   i_s = i_s * delta
+    # if self._aug_rand_brightness:
+    #   delta = 0.75 #preprocessing_ops.rand_scale(0.75)
+    #   i_v = i_v * delta
+
+    # image = tf.concat([i_h, i_s, i_v], axis=-1)
+    # image = tf.image.hsv_to_rgb(image)
+
     if self._aug_rand_hue:
-      delta = preprocessing_ops.rand_uniform_strong(
-          -0.1, 0.1
-      )  # tf.random.uniform([], minval= -0.1,maxval=0.1, seed=self._seed, dtype=tf.float32)
-      i_h = i_h + delta  # Hue
-      i_h = tf.clip_by_value(i_h, 0.0, 1.0)
+      delta = preprocessing_ops.rand_uniform_strong(-0.1, 0.1)
+      image = tf.image.adjust_hue(image, delta)
     if self._aug_rand_saturation:
-      delta = preprocessing_ops.rand_scale(
-          0.75
-      )  # tf.random.uniform([], minval= 0.5,maxval=1.1, seed=self._seed, dtype=tf.float32)
-      i_s = i_s * delta
+      delta = preprocessing_ops.rand_scale(0.75)
+      image = tf.image.adjust_saturation(image, delta)
     if self._aug_rand_brightness:
-      delta = preprocessing_ops.rand_scale(
-          0.75
-      )  # tf.random.uniform([], minval= -0.15,maxval=0.15, seed=self._seed, dtype=tf.float32)
-      i_v = i_v * delta
-    image = tf.concat([i_h, i_s, i_v], axis=-1)
-    image = tf.image.hsv_to_rgb(image)
-
-    stddev = tf.random.uniform([],
-                               minval=0,
-                               maxval=40 / 255,
-                               seed=self._seed,
-                               dtype=tf.float32)
-    noise = tf.random.normal(
-        shape=tf.shape(image), mean=0.0, stddev=stddev, seed=self._seed)
-    noise = tf.math.minimum(noise, 0.5)
-    noise = tf.math.maximum(noise, 0)
-    image += noise
+      delta = preprocessing_ops.rand_scale(0.75)
+      image *= delta
     image = tf.clip_by_value(image, 0.0, 1.0)
+
+    # stddev = tf.random.uniform([],
+    #                            minval=0,
+    #                            maxval=40 / 255,
+    #                            seed=self._seed,
+    #                            dtype=tf.float32)
+    # noise = tf.random.normal(
+    #     shape=tf.shape(image), mean=0.0, stddev=stddev, seed=self._seed)
+    # noise = tf.math.minimum(noise, 0.5)
+    # noise = tf.math.maximum(noise, 0)
+    # image += noise
+    # image = tf.clip_by_value(image, 0.0, 1.0)
 
     if self._aug_rand_aspect:
       aspect = preprocessing_ops.rand_scale(0.75)
@@ -142,11 +130,6 @@ class Parser(parser.Parser):
       nw = tf.cast(w, dtype=tf.int32)
       image = tf.image.resize(image, size=(nw, nh))
     image = tf.image.random_flip_left_right(image, seed=self._seed)
-
-    # i added this to push to see if this helps it is not in the paper
-    # do_rand = tf.random.uniform([], minval= 0,maxval=1, seed=self._seed, dtype=tf.float32)
-    # if do_rand > 0.9:
-    #   image = 1.0 - image
 
     image = tf.image.resize_with_pad(
         image,

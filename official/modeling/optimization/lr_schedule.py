@@ -242,3 +242,61 @@ class PowerAndLinearDecay(tf.keras.optimizers.schedules.LearningRateSchedule):
         "linear_decay_fraction": self._linear_decay_fraction,
         "name": self._name,
     }
+
+
+class CosineEpoch(tf.keras.optimizers.schedules.LearningRateSchedule):
+  """Learning rate schedule with multiplied by linear decay at the end.
+
+  follows lr * (step)^power for the first total_decay_steps *
+  (1 - linear_decay_fraction) steps, and follows lr * (step)^power *
+  (total_decay_steps - step) / (total_decay_steps * linear_decay_fraction)
+  for the rest of the steps.
+  """
+
+  def __init__(self,
+               initial_learning_rate: float,
+               decay_steps: int,
+               steps_per_epoch: int = 1.0,
+               alpha: float = 0.0,
+               name: str = "PowerAndLinearDecay"):
+    """Initialize configuration of the learning rate schedule.
+
+    Args:
+      initial_learning_rate: A float, the initial learning rate.
+      total_decay_steps: The total number of steps for power + linear decay.
+      power: A float, the number of steps required for linear warmup.
+      linear_decay_fraction: A float, in the last `linear_decay_fraction` steps,
+        the learning rate will be multiplied by a linear decay.
+      name: Optional, name of warmup schedule.
+    """
+    super(CosineEpoch, self).__init__()
+    self.initial_learning_rate = initial_learning_rate
+    self.steps_per_epoch = steps_per_epoch
+    self.decay_steps = decay_steps//steps_per_epoch
+    self.alpha = alpha
+    self.name = name
+    self._pi = 3.14159265358979
+
+  def __call__(self, step):
+    with tf.name_scope(self.name or "CosineDecay"):
+      step = step // self.steps_per_epoch
+
+      initial_learning_rate = tf.convert_to_tensor(self.initial_learning_rate)
+      dtype = initial_learning_rate.dtype
+
+      decay_steps = tf.cast(self.decay_steps, dtype)
+      global_step_recomp = tf.cast(step, dtype)
+      global_step_recomp = tf.math.minimum(global_step_recomp, decay_steps)
+      completed_fraction = global_step_recomp / decay_steps
+      cosine_decayed = 0.5 * (1.0 + tf.math.cos(tf.constant(self._pi) * completed_fraction))
+
+      decayed = (1 - self.alpha) * cosine_decayed + self.alpha
+      return tf.math.multiply(initial_learning_rate, decayed)
+
+  def get_config(self):
+    return {
+        "initial_learning_rate": self.initial_learning_rate,
+        "decay_steps": self.decay_steps,
+        "alpha": self.alpha,
+        "name": self.name
+    }

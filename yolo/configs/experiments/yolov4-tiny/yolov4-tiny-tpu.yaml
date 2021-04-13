@@ -1,0 +1,101 @@
+runtime:
+  distribution_strategy: 'tpu'
+  mixed_precision_dtype: 'bfloat16'
+task:
+  weight_decay: 0.0005
+  init_checkpoint: ''
+  annotation_file: null
+  gradient_clip_norm: 0.0
+  load_darknet_weights: false
+  darknet_load_decoder: false
+  model:
+    base: 
+      backbone:
+        type: 'darknet'
+        darknet:
+          model_id: 'cspdarknettiny'
+      decoder:
+        version: v4
+        type: tiny
+      darknet_weights_file: 'cache://yolov4-tiny.weights'
+      darknet_weights_cfg: 'cache://yolov4-tiny.cfg'
+    num_classes: 91
+    subdivisions: 1
+    _boxes: ['(10, 14)', '(23, 27)', '(37, 58)', '(81, 82)', '(135, 169)', '(344, 319)']
+    _input_size: [512, 512, 3]
+    boxes_per_scale: 3
+    max_level: 5
+    min_level: 4
+    norm_activation:
+      activation: mish
+      norm_epsilon: 0.001
+      norm_momentum: 0.99
+      use_sync_bn: false
+    decoder_activation: leaky
+    filter:
+      anchor_generation_scale: 512
+      ignore_thresh: 0.7
+      iou_thresh: 0.2
+      nms_thresh: 0.9
+      loss_type: ciou
+      max_boxes: 200
+      use_nms: false
+      iou_normalizer: 0.07
+  train_data:
+    global_batch_size: 64 #batch size 
+    tfds_data_dir: 'gs://tensorflow2/tensorflow_datasets'
+    tfds_download: true
+    tfds_name: coco
+    tfds_split: train
+    drop_remainder: true
+    dtype: bfloat16
+    input_path: ''
+    is_training: true
+    shuffle_buffer_size: 10000
+    parser:
+      fixed_size: true
+      image_h: 512
+      image_w: 512
+      seed: 10
+      letter_box: true
+      
+      
+      use_tie_breaker: true
+  validation_data:
+    global_batch_size: 8
+    tfds_data_dir: 'gs://tensorflow2/tensorflow_datasets'
+    tfds_download: true
+    tfds_name: coco
+    tfds_split: validation
+    dtype: bfloat16
+    input_path: ''
+    is_training: false
+    shuffle_buffer_size: 10000
+    parser:
+      image_h: 512
+      image_w: 512
+      fixed_size: true
+      use_tie_breaker: true
+trainer:
+  train_steps: 500500 # 160 epochs at 64 batchsize -> 500500 * 64/2
+  validation_steps: 625
+  steps_per_loop: 10000
+  validation_interval: 10000 #00
+  summary_interval: 10000
+  checkpoint_interval: 10000
+  optimizer_config:
+    learning_rate:
+      type: stepwise
+      stepwise:
+        boundaries: [400000, 450000]
+        name: PiecewiseConstantDecay
+        values: [0.00261, 0.000261, 0.0000261]
+    optimizer:
+      type: sgd
+      sgd:
+        momentum: 0.9
+        name: SGD
+    warmup:
+      type: 'linear'
+      linear:
+        warmup_steps: 1000 #learning rate rises from 0 to 0.0013 over 1000 steps

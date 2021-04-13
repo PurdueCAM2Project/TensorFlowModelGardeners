@@ -35,7 +35,7 @@ def process_source_id(source_id):
 def pad_groundtruths_to_fixed_size(groundtruths, size):
   """Pads the first dimension of groundtruths labels to the fixed size."""
   groundtruths['boxes'] = preprocess_ops.clip_or_pad_to_fixed_size(
-      groundtruths['boxes'], size, -1)
+      groundtruths['boxes'], size, 0)
   groundtruths['is_crowds'] = preprocess_ops.clip_or_pad_to_fixed_size(
       groundtruths['is_crowds'], size, 0)
   groundtruths['areas'] = preprocess_ops.clip_or_pad_to_fixed_size(

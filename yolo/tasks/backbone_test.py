@@ -41,5 +41,5 @@ def test_classification():
   return
 
 
-prep_gpu()
-test_classification()
+# prep_gpu()
+# test_classification()

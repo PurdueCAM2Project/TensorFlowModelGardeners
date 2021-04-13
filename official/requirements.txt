@@ -12,7 +12,6 @@ tensorflow-hub>=0.6.0
 tensorflow-model-optimization>=0.4.1
 tensorflow-datasets
 tensorflow-addons
-tensorflow>=2.4.0
 dataclasses
 gin-config
 tf_slim>=1.1.0
@@ -20,7 +19,7 @@ Cython
 matplotlib
 pyyaml>=5.1
 # CV related dependencies
-opencv-python
+opencv-python-headless
 Pillow
 pycocotools
 # NLP related dependencies

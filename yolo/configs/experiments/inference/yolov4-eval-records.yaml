@@ -1,0 +1,79 @@
+runtime:
+  distribution_strategy: mirrored
+  mixed_precision_dtype: float16
+  loss_scale: "dynamic"
+  num_gpus: 1
+task:
+  model:
+    base: 
+      backbone:
+        type: 'darknet'
+        darknet:
+          model_id: 'cspdarknet53'
+      decoder:
+        version: v4
+        type: regular
+      darknet_weights_file: 'cache://yolov4.weights'
+      darknet_weights_cfg: 'cache://yolov4.cfg'
+    num_classes: 91
+    _boxes: ['[12.0, 16.0]', '[19.0, 36.0]', '[40.0, 28.0]', '[36.0, 75.0]', '[76.0,55.0]', '[72.0, 146.0]', '[142.0, 110.0]', '[192.0, 243.0]', '[459.0, 401.0]']
+    _input_size: null #[256, 256, 3]
+    boxes_per_scale: 3
+    max_level: 5
+    min_level: 3
+    norm_activation:
+      activation: mish
+      norm_epsilon: 0.001
+      norm_momentum: 0.99
+      use_sync_bn: false
+    decoder_activation: leaky
+    filter:
+      anchor_generation_scale: 512
+      ignore_thresh: 0.7
+      iou_thresh: 0.25
+      nms_thresh: 0.6
+      loss_type: ciou
+      max_boxes: 200
+      use_nms: false
+      iou_normalizer: 0.07
+  validation_data:
+    global_batch_size: 8
+    dtype: float16
+    input_path: 'gs://tensorflow2/coco_records/val/2017*'
+    is_training: false
+    shuffle_buffer_size: 10000
+    drop_remainder: false
+    parser:
+      image_h: 512
+      image_w: 512
+      fixed_size: true
+      use_tie_breaker: true
+  weight_decay: 0.0005
+  init_checkpoint: ''
+  annotation_file: null
+  gradient_clip_norm: 0.0
+  load_darknet_weights: true
+  darknet_load_decoder: true
+trainer:
+  train_steps: 10000 # 160 epochs at 64 batchsize -> 500500 * 64/16
+  validation_steps: 625 # 5063 #625
+  steps_per_loop: 10000
+  validation_interval: 1
+  summary_interval: 10000
+  checkpoint_interval: 10000
+  optimizer_config:
+    learning_rate:
+      type: stepwise
+      stepwise:
+        boundaries: [800000, 900000] # [400000, 450000]
+        name: PiecewiseConstantDecay
+        values: [0.00065, 0.000065, 0.0000065] #[0.0013, 0.00013, 0.000013]
+    optimizer:
+      type: sgd
+      sgd:
+        momentum: 0.949
+        name: SGD
+    warmup:
+      type: 'linear'
+      linear:
+        warmup_steps: 1000 #learning rate rises from 0 to 0.0013 over 1000 steps

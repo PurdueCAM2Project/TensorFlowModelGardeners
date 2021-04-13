@@ -35,8 +35,8 @@ class Parser(parser.Parser):
         hue.
       aug_rand_aspect: `bool`, if True, augment training with random
         aspect.
-      scale: 'list', `Tensor` or `list` for [low, high] of the bounds of the random
-        scale.
+      scale: 'list', `Tensor` or `list` for [low, high] of the bounds of the 
+        random scale.
       seed: an `int` for the seed used by tf.random
     """
     self._output_size = output_size

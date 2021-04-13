@@ -22,6 +22,7 @@ from yolo.utils.demos import utils
 from yolo.utils.run_utils import prep_gpu
 from yolo.configs import yolo as exp_cfg
 from yolo.tasks.yolo import YoloTask
+import yolo.demos.three_servers.video_server as video_t
 
 
 class FastVideo(object):
@@ -137,9 +138,12 @@ class FastVideo(object):
 
     self._colors = gen_colors(self._classes)
 
-    if labels is None:
+    if labels is None and classes == 80:
       self._labels = get_coco_names(
           path='yolo/dataloaders/dataset_specs/coco.names')
+    elif labels is None and classes == 91:
+      self._labels = get_coco_names(
+          path='yolo/dataloaders/dataset_specs/coco-91.names')
     else:
       self._labels = labels
 
@@ -167,20 +171,19 @@ class FastVideo(object):
     self._batch_proc = 1
     self._frames = 1
     self._obj_detected = -1
+
+    self._display = video_t.DisplayThread()
     return
 
   def _preprocess(self, image):
-    # flip the image to make it mirror if you are using a webcam
     if type(self._file) == int:
       image = tf.image.flip_left_right(image)
     image = tf.cast(image, dtype=tf.float32)
     image = image / 255
-    #tf.print(" ", end = "\r")
     return image
 
   def read(self, lock=None):
     """ read video frames in a thread """
-    # init the starting variables to calculate FPS
     start = time.time()
     l = 0
     tick = 0
@@ -210,13 +213,12 @@ class FastVideo(object):
         timeout = 0
         success, image = self._cap.read()
         if not success:
-          break
-        with tf.device(process_device):
-          e = datetime.datetime.now()
-          image = preprocess(image)
-          # then dump the image on the que
-          self._load_que.put(image)
-          f = datetime.datetime.now()
+          time.sleep(self._wait_time)
+          continue
+        e = datetime.datetime.now()
+        image = tf.cast(tf.convert_to_tensor(image), tf.float16)
+        self._load_que.put(image)
+        f = datetime.datetime.now()
 
         # compute the reading FPS
         l += 1
@@ -231,9 +233,7 @@ class FastVideo(object):
       self._running = False
       raise
     except Exception as e:
-      #print ("reading", e)
       self._running = False
-      # time.sleep(10)
       raise e
     self._running = False
     return
@@ -244,6 +244,7 @@ class FastVideo(object):
         https://www.tensorflow.org/api_docs/python/tf/image/combined_non_max_suppression
         """
     # init the starting variables to calculate FPS
+    self._display.start()
     try:
       start = time.time()
       l = 0
@@ -261,35 +262,27 @@ class FastVideo(object):
         # get the images, the predictions placed on the que via the run function (the model)
         image, pred = self._display_que.get()
         image = self._draw_fn(image, pred)
+        # del image
+        # del pred
 
         # there is potential for the images to be processed in batches, so for each image in the batch draw the boxes and the predictions and the confidence
-        for i in range(image.shape[0]):
-          # self._obj_detected = draw_box(image[i], boxes[i],
-          #                               classes[i], conf[i],
-          #                               self._draw_fn)
+        for im in iter(image):
+          while not self._display.put(im):
+            time.sleep(self._wait_time)
+          self._display_fps = self._display.fps
 
-          # display the frame then wait in case something else needs to catch up
-          cv2.imshow('frame', image[i])
-          time.sleep(self._wait_time)
-
-          # compute the display fps
-          l += 1
-          if time.time() - start - tick >= 1:
-            tick += 1
-            # store the fps to diplayed to the user
-            self._display_fps = l
-            l = 0
-          if cv2.waitKey(1) & 0xFF == ord('q') or not self._running:
-            break
     except ValueError:
       self._running = False
+      self._display.close()
       raise
     except Exception as e:
       #print ("display", e)
       self._running = False
+      self._display.close()
       # time.sleep(10)
       raise e
     self._running = False
+    self._display.close()
     return
 
   def run(self):
@@ -309,20 +302,15 @@ class FastVideo(object):
     # get one frame and put it inthe process que to get the process started
     if self._cap.isOpened():
       success, image = self._cap.read()
-      with tf.device(self._pre_process_device):
-        e = datetime.datetime.now()
-        image = preprocess(image)
-        self._load_que.put(image)
-        f = datetime.datetime.now()
-      with tf.device(self._gpu_device):
-        pimage = tf.image.resize(image, (self._p_width, self._p_height))
-        pimage = tf.expand_dims(pimage, axis=0)
-        if hasattr(model, 'predict'):
-          predfunc = model.predict
-          print('using pred function')
-        else:
-          predfunc = model
-          print('using call function')
+      e = datetime.datetime.now()
+      self._load_que.put(image)
+      f = datetime.datetime.now()
+      if hasattr(model, 'predict'):
+        predfunc = model.predict
+        print('using pred function')
+      else:
+        predfunc = model
+        print('using call function')
     else:
       return
 
@@ -344,24 +332,21 @@ class FastVideo(object):
             break
           value = self._load_que.get()
           proc.append(value)
-          # for debugging
-          # we can watch it catch up to real time
-          # print(len(self._load_que.queue), end= " ")
 
         # if the que was empty the model is ahead, and take abreak to let the other threads catch up
         if len(proc) == 0:
           time.sleep(self._wait_time)
           continue
-          # print()
 
         # log time and process the batch loaded in the for loop above
         a = datetime.datetime.now()
         with tf.device(self._gpu_device):
-          image = tf.convert_to_tensor(proc)
+          image = tf.stack(proc, axis=0)
+          image = preprocess(image)
           pimage = tf.image.resize(image, (self._p_width, self._p_height))
           pred = predfunc(pimage)
           if image.shape[1] != self._height:
-            image = tf.image.resize(image, (self._height, self._width))
+            image = tf.image.resize(pimage, (self._height, self._width))
         b = datetime.datetime.now()
 
         # computation latency to see how much delay between input and output
@@ -461,7 +446,12 @@ class FastVideo(object):
         '                                 \rfps avg: \033[1;37;40m%0.5f\033[0m'
         % (self._prev_display_fps),
         end='\n')
-    print('\033[F\033[F\033[F\033[F\033[F\033[F\033[F', end='\n')
+    print(
+        '                                 \rmemuse: \033[1;37;40m%0.5f\033[0m GB'
+        % (tf.config.experimental.get_memory_usage(self._gpu_device) / 1e9),
+        end='\n')
+
+    print('\033[F\033[F\033[F\033[F\033[F\033[F\033[F\033[F', end='\n')
     return
 
 
@@ -524,7 +514,7 @@ def get_model(model):
 #   config = [os.path.abspath('yolo/configs/experiments/yolov4-eval.yaml')]
 #   model_dir = "" #os.path.abspath("../checkpoints/yolo_dt8_norm_iou")
 
-#   task, model = load_model(experiment='yolo_custom', config_path=config, model_dir=model_dir)
+#   task, model, params = run.load_model(experiment='yolo_custom', config_path=config, model_dir=model_dir)
 
 #   cap = FastVideo(
 #       "../videos/nyc.mp4",

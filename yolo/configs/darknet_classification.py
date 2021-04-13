@@ -29,7 +29,7 @@ class DataConfig(cfg.DataConfig):
   input_path: str = ''
   tfds_name: str = 'imagenet2012'  # 'cats_vs_dogs' #
   tfds_split: str = 'train'
-  tfds_data_dir: str = ''  # '/media/vbanna/DATA_SHARE/tfds'
+  tfds_data_dir: str = '/media/vbanna/DATA_SHARE/tfds'
   global_batch_size: int = 1
   is_training: bool = True
   dtype: str = 'float16'
@@ -53,7 +53,7 @@ class ImageClassificationModel(hyperparams.Config):
   add_head_batch_norm: bool = False
   min_level: Optional[int] = None
   max_level: int = 5
-  dilate: bool = False
+  subdivisions: int = 8
   darknet_weights_file: str = 'cache://csdarknet53.weights'
   darknet_weights_cfg: str = 'cache://csdarknet53.cfg'
 
@@ -74,7 +74,8 @@ class ImageClassificationTask(cfg.TaskConfig):
   losses: Losses = Losses()
   gradient_clip_norm: float = 0.0
   logging_dir: str = None
-  load_darknet_weights: bool = True
+  load_darknet_weights: bool = False
+  init_checkpoint_modules: str = 'backbone'
 
 
 @exp_factory.register_config_factory('darknet_classification')

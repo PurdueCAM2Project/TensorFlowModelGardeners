@@ -68,7 +68,7 @@ def build_block_specs(config):
   return specs
 
 
-class layer_factory(object):
+class LayerFactory(object):
   """
   class for quick look up of default layers used by darknet to
   connect, introduce or exit a level. Used in place of an if condition
@@ -122,7 +122,7 @@ CSPDARKNET53 = {
         LISTNAMES,
     'splits': {
         'backbone_split': 106,
-        'neck_split': 138
+        'neck_split': 132
     },
     'backbone': [
         [
@@ -148,6 +148,84 @@ CSPDARKNET53 = {
         [
             'DarkRes', 'csp', 4, False, 1024, None, None, None, None, 'mish',
             -1, 4, 5, True
+        ],
+    ]
+}
+
+CSPADARKNET53 = {
+    'list_names':
+        LISTNAMES,
+    'splits': {
+        'backbone_split': 100,
+        'neck_split': 135
+    },
+    'backbone': [
+        [
+            'ConvBN', None, 1, False, 32, None, 3, 1, 'same', 'mish', -1, 1, 0,
+            False
+        ],
+        [
+            'DarkRes', 'residual', 1, True, 64, None, None, None, None, 'mish',
+            -1, 1, 1, False
+        ],
+        [
+            'DarkRes', 'csp', 2, False, 128, None, None, None, None, 'mish', -1,
+            1, 2, False
+        ],
+        [
+            'DarkRes', 'csp', 8, False, 256, None, None, None, None, 'mish', -1,
+            1, 3, True
+        ],
+        [
+            'DarkRes', 'csp', 8, False, 512, None, None, None, None, 'mish', -1,
+            2, 4, True
+        ],
+        [
+            'DarkRes', 'csp', 4, False, 1024, None, None, None, None, 'mish',
+            -1, 4, 5, True
+        ],
+    ]
+}
+
+LARGECSP53 = {
+    'list_names':
+        LISTNAMES,
+    'splits': {
+        'backbone_split': 100,
+        'neck_split': 135
+    },
+    'backbone': [
+        [
+            'ConvBN', None, 1, False, 32, None, 3, 1, 'same', 'mish', -1, 1, 0,
+            False
+        ],
+        [
+            'DarkRes', 'csp', 1, True, 64, None, None, None, None, 'mish', -1,
+            1, 1, False
+        ],
+        [
+            'DarkRes', 'csp', 3, False, 128, None, None, None, None, 'mish', -1,
+            1, 2, False
+        ],
+        [
+            'DarkRes', 'csp', 15, False, 256, None, None, None, None, 'mish',
+            -1, 1, 3, True
+        ],
+        [
+            'DarkRes', 'csp', 15, False, 512, None, None, None, None, 'mish',
+            -1, 2, 4, True
+        ],
+        [
+            'DarkRes', 'csp', 7, False, 1024, None, None, None, None, 'mish',
+            -1, 4, 5, True
+        ],
+        [
+            'DarkRes', 'csp', 7, False, 1024, None, None, None, None, 'mish',
+            -1, 8, 6, True
+        ],
+        [
+            'DarkRes', 'csp', 7, False, 1024, None, None, None, None, 'mish',
+            -1, 16, 7, True
         ],
     ]
 }
@@ -262,7 +340,9 @@ BACKBONES = {
     'darknettiny': DARKNETTINY,
     'darknet53': DARKNET53,
     'cspdarknet53': CSPDARKNET53,
-    'cspdarknettiny': CSPDARKNETTINY
+    'altered_cspdarknet53': CSPADARKNET53,
+    'cspdarknettiny': CSPDARKNETTINY,
+    'csp-large': LARGECSP53,
 }
 
 
@@ -275,10 +355,14 @@ class Darknet(ks.Model):
       input_specs=tf.keras.layers.InputSpec(shape=[None, None, None, 3]),
       min_level=None,
       max_level=5,
+      width_scale=1.0,
+      depth_scale=1.0,
+      csp_level_mod=[],
       activation=None,
       use_sync_bn=False,
       norm_momentum=0.99,
       norm_epsilon=0.001,
+      subdivisions=8,
       dilate=False,
       kernel_initializer='glorot_uniform',
       kernel_regularizer=None,
@@ -290,12 +374,13 @@ class Darknet(ks.Model):
     self._model_name = model_id
     self._splits = splits
     self._input_shape = input_specs
-    self._registry = layer_factory()
+    self._registry = LayerFactory()
 
     # default layer look up
     self._min_size = min_level
     self._max_size = max_level
     self._output_specs = None
+    self._csp_level_mod = set(csp_level_mod)
 
     self._kernel_initializer = kernel_initializer
     self._bias_regularizer = bias_regularizer
@@ -305,6 +390,9 @@ class Darknet(ks.Model):
     self._activation = activation
     self._kernel_regularizer = kernel_regularizer
     self._dilate = dilate
+    self._subdivisions = subdivisions
+    self._width_scale = width_scale
+    self._depth_scale = depth_scale
 
     self._default_dict = {
         'kernel_initializer': self._kernel_initializer,
@@ -314,6 +402,7 @@ class Darknet(ks.Model):
         'norm_epsilon': self._norm_epislon,
         'use_sync_bn': self._use_sync_bn,
         'activation': self._activation,
+        'subdivisions': self._subdivisions,
         'dilation_rate': 1,
         'name': None
     }
@@ -338,6 +427,14 @@ class Darknet(ks.Model):
     endpoints = collections.OrderedDict()
     stack_outputs = [inputs]
     for i, config in enumerate(net):
+      if config.output_name > self._max_size:
+        break
+      if config.output_name in self._csp_level_mod:
+        config.stack = 'residual'
+
+      config.filters = int(config.filters * self._width_scale)
+      config.repetitions = int(config.repetitions * self._depth_scale)
+
       if config.stack is None:
         x = self._build_block(
             stack_outputs[config.route], config, name=f"{config.layer}_{i}")
@@ -534,7 +631,8 @@ class Darknet(ks.Model):
         'norm_momentum': self._norm_momentum,
         'norm_epsilon': self._norm_epislon,
         'use_sync_bn': self._use_sync_bn,
-        'activation': self._activation
+        'activation': self._activation,
+        'subdivisions': self._subdivisions,
     }
     return layer_config
 
@@ -547,13 +645,21 @@ def build_darknet(
 
   backbone_cfg = model_config.backbone.get()
   norm_activation_config = model_config.norm_activation
-  print(backbone_cfg)
+
+  if hasattr(model_config, 'subdivisions'):
+    subdivisions = model_config.subdivisions
+  else:
+    subdivisions = 1
+
   model = Darknet(
       model_id=backbone_cfg.model_id,
       min_level=model_config.min_level,
       max_level=model_config.max_level,
-      input_shape=input_specs,
-      dilate=model_config.dilate,
+      input_specs=input_specs,
+      dilate=backbone_cfg.dilate,
+      subdivisions=subdivisions,
+      width_scale=backbone_cfg.width_scale,
+      depth_scale=backbone_cfg.depth_scale,
       activation=norm_activation_config.activation,
       use_sync_bn=norm_activation_config.use_sync_bn,
       norm_momentum=norm_activation_config.norm_momentum,

@@ -1,0 +1,352 @@
+
+!--PREPPING GPU--! 
+1 Physical GPUs, 1 Logical GPUs
+yolo_custom
+adjustment is needed
+sgd
+{'task': {'init_checkpoint': 'gs://tensorflow2/darknet/cspdarknet53-golden', 'model': {'num_classes': 91, '_input_size': None, 'min_level': 3, 'max_level': 5, 'boxes_per_scale': 3, 'base': {'type': None}, 'subdivisions': 16, 'use_sam': False, 'filter': {'min_level': 3, 'max_level': 5, 'ignore_thresh': {'3': 0.7, '4': 0.7, '5': 0.7}, 'truth_thresh': {'3': 1.0, '4': 1.0, '5': 1.0}, 'loss_type': {'3': 'ciou', '4': 'ciou', '5': 'ciou'}, 'iou_normalizer': {'3': 0.05, '4': 0.05, '5': 0.05}, 'cls_normalizer': {'3': 0.5, '4': 0.5, '5': 0.5}, 'obj_normalizer': {'3': 4.0, '4': 1.0, '5': 0.4}, 'max_delta': {'3': inf, '4': inf, '5': inf}, 'new_cords': {'3': True, '4': True, '5': True}, 'scale_xy': {'3': 2.0, '4': 2.0, '5': 2.0}, 'path_scales': {'3': 8, '4': 16, '5': 32}, 'objectness_smooth': {'3': 0.0, '4': 0.0, '5': 0.0}, 'use_nms': True, 'iou_thresh': 0.001, 'nms_thresh': 0.6, 'max_boxes': 200, 'anchor_generation_scale': 512, 'use_reduction_sum': False}, 'norm_activation': {'activation': 'mish', 'use_sync_bn': True, 'norm_momentum': 0.99, 'norm_epsilon': 0.001}, 'decoder_activation': 'leaky', '_boxes': ['[12.0, 16.0]', '[19.0, 36.0]', '[40.0, 28.0]', '[36.0, 75.0]', '[76.0, 55.0]', '[72.0, 146.0]', '[142.0, 110.0]', '[192.0, 243.0]', '[459.0, 401.0]']}, 'train_data': {'input_path': 'gs://tensorflow2/coco_records/train/2017*', 'tfds_name': None, 'tfds_split': None, 'global_batch_size': 4, 'is_training': True, 'drop_remainder': True, 'shuffle_buffer_size': 10000, 'cache': False, 'cycle_length': None, 'block_length': 1, 'deterministic': None, 'sharding': True, 'enable_tf_data_service': False, 'tf_data_service_address': None, 'tf_data_service_job_name': None, 'tfds_data_dir': '', 'tfds_download': True, 'tfds_as_supervised': False, 'tfds_skip_decoding_feature': '', 'dtype': 'float16', 'decoder': {'type': 'simple_decoder', 'simple_decoder': {'regenerate_source_id': False}}, 'parser': {'image_w': 512, 'image_h': 512, 'fixed_size': True, 'max_num_instances': 200, 'min_process_size': 512, 'letter_box': False, 'random_flip': True, 'pct_rand': 0.0, 'jitter_im': 0.3, 'jitter_boxes': 0.4, 'aug_rand_translate': 0.2, 'aug_rand_saturation': 1.5, 'aug_rand_brightness': 1.5, 'aug_rand_zoom': 0.5, 'aug_rand_hue': 0.1, 'aug_rand_angle': 0.0, 'use_tie_breaker': True, 'use_scale_xy': False, 'mosaic': {'output_size': [640, 640], 'mosaic_frequency': 0.85, 'crop_area': [0.25, 1.0], 'crop_area_mosaic': [0.25, 0.75], 'random_crop': True, 'random_crop_mosaic': False}}}, 'validation_data': {'input_path': 'gs://tensorflow2/coco_records/val/2017*', 'tfds_name': None, 'tfds_split': None, 'global_batch_size': 8, 'is_training': False, 'drop_remainder': True, 'shuffle_buffer_size': 10000, 'cache': False, 'cycle_length': None, 'block_length': 1, 'deterministic': None, 'sharding': True, 'enable_tf_data_service': False, 'tf_data_service_address': None, 'tf_data_service_job_name': None, 'tfds_data_dir': '', 'tfds_download': True, 'tfds_as_supervised': False, 'tfds_skip_decoding_feature': '', 'dtype': 'float16', 'decoder': {'type': 'simple_decoder', 'simple_decoder': {'regenerate_source_id': False}}, 'parser': {'image_w': 608, 'image_h': 608, 'fixed_size': True, 'max_num_instances': 200, 'min_process_size': 1000000, 'letter_box': False, 'random_flip': True, 'pct_rand': 0.0, 'jitter_im': 0.3, 'jitter_boxes': 0.2, 'aug_rand_translate': 0.25, 'aug_rand_saturation': 1.5, 'aug_rand_brightness': 1.5, 'aug_rand_zoom': 0.5, 'aug_rand_hue': 0.1, 'aug_rand_angle': 0.0, 'use_tie_breaker': True, 'use_scale_xy': True, 'mosaic': {'output_size': [640, 640], 'mosaic_frequency': 0.85, 'crop_area': [0.25, 1.0], 'crop_area_mosaic': [0.25, 0.75], 'random_crop': True, 'random_crop_mosaic': False}}}, 'weight_decay': 0.001, 'annotation_file': None, 'gradient_clip_norm': 0.0, 'per_category_metrics': False, 'load_darknet_weights': False, 'darknet_load_decoder': False, 'init_checkpoint_modules': 'backbone'}, 'trainer': {'optimizer_config': {'optimizer': {'type': 'sgd_accum', 'sgd_accum': {'clipnorm': None, 'clipvalue': None, 'global_clipnorm': None, 'name': 'SGD', 'decay': 0.0, 'nesterov': False, 'momentum': 0.949, 'accumulation_steps': 16}}, 'ema': None, 'learning_rate': {'type': 'stepwise', 'stepwise': {'name': 'PiecewiseConstantDecay', 'boundaries': [2598400, 2923200], 'values': [0.0013, 0.00013, 1.3e-05]}}, 'warmup': {'type': 'polynomial', 'polynomial': {'name': 'polynomial', 'power': 4, 'warmup_steps': 1000}}}, 'train_tf_while_loop': True, 'train_tf_function': True, 'eval_tf_function': True, 'eval_tf_while_loop': False, 'allow_tpu_summary': False, 'steps_per_loop': 20000, 'summary_interval': 20000, 'checkpoint_interval': 20000, 'max_to_keep': 5, 'continuous_eval_timeout': 3600, 'train_steps': 3264000, 'validation_steps': 625, 'validation_interval': 20000, 'best_checkpoint_export_subdir': '', 'best_checkpoint_eval_metric': 'str = "AP50"', 'best_checkpoint_metric_comp': 'str = "higher"', 'loss_upper_bound': 1000000.0, 'recovery_begin_steps': 0, 'recovery_max_trials': 0}, 'runtime': {'distribution_strategy': 'mirrored', 'enable_xla': False, 'gpu_thread_mode': None, 'dataset_num_private_threads': None, 'per_gpu_thread_count': 0, 'tpu': None, 'num_gpus': 1, 'worker_hosts': None, 'task_index': -1, 'all_reduce_alg': None, 'num_packs': 1, 'mixed_precision_dtype': 'float16', 'loss_scale': 'dynamic', 'run_eagerly': False, 'batchnorm_spatial_persistent': False, 'num_cores_per_replica': 1, 'default_shard_dim': -1}}
+{'3': 2.0, '4': 2.0, '5': 2.0} 0.0005
+{'num_classes': 91, '_input_size': None, 'min_level': 3, 'max_level': 5, 'boxes_per_scale': 3, 'base': {'type': None}, 'subdivisions': 16, 'use_sam': False, 'filter': {'min_level': 3, 'max_level': 5, 'ignore_thresh': {'3': 0.7, '4': 0.7, '5': 0.7}, 'truth_thresh': {'3': 1.0, '4': 1.0, '5': 1.0}, 'loss_type': {'3': 'ciou', '4': 'ciou', '5': 'ciou'}, 'iou_normalizer': {'3': 0.05, '4': 0.05, '5': 0.05}, 'cls_normalizer': {'3': 0.5, '4': 0.5, '5': 0.5}, 'obj_normalizer': {'3': 4.0, '4': 1.0, '5': 0.4}, 'max_delta': {'3': inf, '4': inf, '5': inf}, 'new_cords': {'3': True, '4': True, '5': True}, 'scale_xy': {'3': 2.0, '4': 2.0, '5': 2.0}, 'path_scales': {'3': 8, '4': 16, '5': 32}, 'objectness_smooth': {'3': 0.0, '4': 0.0, '5': 0.0}, 'use_nms': True, 'iou_thresh': 0.001, 'nms_thresh': 0.6, 'max_boxes': 200, 'anchor_generation_scale': 512, 'use_reduction_sum': False}, 'norm_activation': {'activation': 'mish', 'use_sync_bn': True, 'norm_momentum': 0.99, 'norm_epsilon': 0.001}, 'decoder_activation': 'leaky', '_boxes': ['[12.0, 16.0]', '[19.0, 36.0]', '[40.0, 28.0]', '[36.0, 75.0]', '[76.0, 55.0]', '[72.0, 146.0]', '[142.0, 110.0]', '[192.0, 243.0]', '[459.0, 401.0]']}
+InputSpec(shape=(None, None, None, 3), ndim=4)
+<tensorflow.python.keras.regularizers.L2 object at 0x7f0b53557400>
+Model: "cspdarknet53"
+__________________________________________________________________________________________________
+Layer (type)                    Output Shape         Param #     Connected to                     
+==================================================================================================
+input_1 (InputLayer)            [(None, None, None,  0                                            
+__________________________________________________________________________________________________
+ConvBN_0_0 (ConvBN)             (None, None, None, 3 1058        input_1[0][0]                    
+__________________________________________________________________________________________________
+DarkRes_1_csp_down (CSPRoute)   ((None, None, None,  27782       ConvBN_0_0[0][0]                 
+__________________________________________________________________________________________________
+DarkRes_1_0 (DarkResidual)      (None, None, None, 6 21060       DarkRes_1_csp_down[0][0]         
+__________________________________________________________________________________________________
+DarkRes_1_csp_connect (CSPConne (None, None, None, 6 13060       DarkRes_1_0[0][0]                
+                                                                 DarkRes_1_csp_down[0][1]         
+__________________________________________________________________________________________________
+DarkRes_2_csp_down (CSPRoute)   ((None, None, None,  91654       DarkRes_1_csp_connect[0][0]      
+__________________________________________________________________________________________________
+DarkRes_2_0 (DarkResidual)      (None, None, None, 6 41732       DarkRes_2_csp_down[0][0]         
+__________________________________________________________________________________________________
+DarkRes_2_1 (DarkResidual)      (None, None, None, 6 41732       DarkRes_2_0[0][0]                
+__________________________________________________________________________________________________
+DarkRes_2_csp_connect (CSPConne (None, None, None, 1 21636       DarkRes_2_1[0][0]                
+                                                                 DarkRes_2_csp_down[0][1]         
+__________________________________________________________________________________________________
+DarkRes_3_csp_down (CSPRoute)   ((None, None, None,  363526      DarkRes_2_csp_connect[0][0]      
+__________________________________________________________________________________________________
+DarkRes_3_0 (DarkResidual)      (None, None, None, 1 165380      DarkRes_3_csp_down[0][0]         
+__________________________________________________________________________________________________
+DarkRes_3_1 (DarkResidual)      (None, None, None, 1 165380      DarkRes_3_0[0][0]                
+__________________________________________________________________________________________________
+DarkRes_3_2 (DarkResidual)      (None, None, None, 1 165380      DarkRes_3_1[0][0]                
+__________________________________________________________________________________________________
+DarkRes_3_3 (DarkResidual)      (None, None, None, 1 165380      DarkRes_3_2[0][0]                
+__________________________________________________________________________________________________
+DarkRes_3_4 (DarkResidual)      (None, None, None, 1 165380      DarkRes_3_3[0][0]                
+__________________________________________________________________________________________________
+DarkRes_3_5 (DarkResidual)      (None, None, None, 1 165380      DarkRes_3_4[0][0]                
+__________________________________________________________________________________________________
+DarkRes_3_6 (DarkResidual)      (None, None, None, 1 165380      DarkRes_3_5[0][0]                
+__________________________________________________________________________________________________
+DarkRes_3_7 (DarkResidual)      (None, None, None, 1 165380      DarkRes_3_6[0][0]                
+__________________________________________________________________________________________________
+DarkRes_3_csp_connect (CSPConne (None, None, None, 2 84228       DarkRes_3_7[0][0]                
+                                                                 DarkRes_3_csp_down[0][1]         
+__________________________________________________________________________________________________
+DarkRes_4_csp_down (CSPRoute)   ((None, None, None,  1447942     DarkRes_3_csp_connect[0][0]      
+__________________________________________________________________________________________________
+DarkRes_4_0 (DarkResidual)      (None, None, None, 2 658436      DarkRes_4_csp_down[0][0]         
+__________________________________________________________________________________________________
+DarkRes_4_1 (DarkResidual)      (None, None, None, 2 658436      DarkRes_4_0[0][0]                
+__________________________________________________________________________________________________
+DarkRes_4_2 (DarkResidual)      (None, None, None, 2 658436      DarkRes_4_1[0][0]                
+__________________________________________________________________________________________________
+DarkRes_4_3 (DarkResidual)      (None, None, None, 2 658436      DarkRes_4_2[0][0]                
+__________________________________________________________________________________________________
+DarkRes_4_4 (DarkResidual)      (None, None, None, 2 658436      DarkRes_4_3[0][0]                
+__________________________________________________________________________________________________
+DarkRes_4_5 (DarkResidual)      (None, None, None, 2 658436      DarkRes_4_4[0][0]                
+__________________________________________________________________________________________________
+DarkRes_4_6 (DarkResidual)      (None, None, None, 2 658436      DarkRes_4_5[0][0]                
+__________________________________________________________________________________________________
+DarkRes_4_7 (DarkResidual)      (None, None, None, 2 658436      DarkRes_4_6[0][0]                
+__________________________________________________________________________________________________
+DarkRes_4_csp_connect (CSPConne (None, None, None, 5 332292      DarkRes_4_7[0][0]                
+                                                                 DarkRes_4_csp_down[0][1]         
+__________________________________________________________________________________________________
+DarkRes_5_csp_down (CSPRoute)   ((None, None, None,  5779462     DarkRes_4_csp_connect[0][0]      
+__________________________________________________________________________________________________
+DarkRes_5_0 (DarkResidual)      (None, None, None, 5 2627588     DarkRes_5_csp_down[0][0]         
+__________________________________________________________________________________________________
+DarkRes_5_1 (DarkResidual)      (None, None, None, 5 2627588     DarkRes_5_0[0][0]                
+__________________________________________________________________________________________________
+DarkRes_5_2 (DarkResidual)      (None, None, None, 5 2627588     DarkRes_5_1[0][0]                
+__________________________________________________________________________________________________
+DarkRes_5_3 (DarkResidual)      (None, None, None, 5 2627588     DarkRes_5_2[0][0]                
+__________________________________________________________________________________________________
+DarkRes_5_csp_connect (CSPConne (None, None, None, 1 1319940     DarkRes_5_3[0][0]                
+                                                                 DarkRes_5_csp_down[0][1]         
+==================================================================================================
+Total params: 26,687,984
+Trainable params: 26,617,184
+Non-trainable params: 70,800
+__________________________________________________________________________________________________
+conv1 512.0
+conv2 1024.0
+conv1 512.0
+spp
+conv1 512.0
+conv2 1024.0
+conv1 512.0
+7
+conv1 512.0
+conv2 256.0
+conv1 512.0
+conv2 256.0
+4
+
+
+
+
+
+
+
+
+ ListWrapper([256, 512, 1024])
+conv1 128
+conv2 256
+conv1 128
+conv2 256
+conv1 128
+conv2 256
+6
+conv1 256
+conv2 512
+conv1 256
+conv2 512
+conv1 256
+conv2 512
+6
+conv1 512
+conv2 1024
+conv1 512
+conv2 1024
+conv1 512
+conv2 1024
+6
+detget {'3': 2.0, '4': 2.0, '5': 2.0}
+Model: "yolo"
+_________________________________________________________________
+Layer (type)                 Output Shape              Param #   
+=================================================================
+cspdarknet53 (Darknet)       OrderedDict([('3', (None, 26687984  
+_________________________________________________________________
+YoloDecoder (YoloDecoder)    {'3': (None, None, None,  37350214  
+_________________________________________________________________
+yolo_head (YoloHead)         multiple                  516960    
+_________________________________________________________________
+yolo_layer (YoloLayer)       multiple                  0         
+=================================================================
+Total params: 64,555,158
+Trainable params: 64,422,336
+Non-trainable params: 132,822
+_________________________________________________________________
+{'3': 2.0, '4': 2.0, '5': 2.0}
+<PrefetchDataset shapes: ((4, 512, 512, 3), {source_id: (4,), bbox: (4, 200, 4), classes: (4, 200), area: (4, 200), is_crowd: (4, 200), best_anchors: (4, 200, 9), best_iou_match: (4, 200, 9), width: (4,), height: (4,), info: (4, 4), num_detections: (4,), upds: {3: (4, 200, 8), 4: (4, 200, 8), 5: (4, 200, 8)}, inds: {3: (4, 200, 3), 4: (4, 200, 3), 5: (4, 200, 3)}, true_conf: {3: (4, 64, 64, 3, 1), 4: (4, 32, 32, 3, 1), 5: (4, 16, 16, 3, 1)}}), types: (tf.float16, {source_id: tf.int64, bbox: tf.float16, classes: tf.float16, area: tf.float16, is_crowd: tf.int32, best_anchors: tf.float16, best_iou_match: tf.float32, width: tf.int32, height: tf.int32, info: tf.int32, num_detections: tf.int32, upds: {3: tf.float16, 4: tf.float16, 5: tf.float16}, inds: {3: tf.int32, 4: tf.int32, 5: tf.int32}, true_conf: {3: tf.float16, 4: tf.float16, 5: tf.float16}})>
+{'3': 2.0, '4': 2.0, '5': 2.0}
+<PrefetchDataset shapes: ((8, 608, 608, 3), {source_id: (8,), bbox: (8, 200, 4), classes: (8, 200), area: (8, 200), is_crowd: (8, 200), best_anchors: (8, 200, 9), best_iou_match: (8, 200, 9), width: (8,), height: (8,), info: (8, 4), num_detections: (8,), upds: {3: (8, 200, 8), 4: (8, 200, 8), 5: (8, 200, 8)}, inds: {3: (8, 200, 3), 4: (8, 200, 3), 5: (8, 200, 3)}, true_conf: {3: (8, 76, 76, 3, 1), 4: (8, 38, 38, 3, 1), 5: (8, 19, 19, 3, 1)}}), types: (tf.float16, {source_id: tf.int64, bbox: tf.float16, classes: tf.float16, area: tf.float16, is_crowd: tf.int32, best_anchors: tf.float16, best_iou_match: tf.float32, width: tf.int32, height: tf.int32, info: tf.int32, num_detections: tf.int32, upds: {3: tf.float16, 4: tf.float16, 5: tf.float16}, inds: {3: tf.int32, 4: tf.int32, 5: tf.int32}, true_conf: {3: tf.float16, 4: tf.float16, 5: tf.float16}})>
+restoring or initializing model...
+restored model from ../checkpoints/yolov4-coco-adam-mo2017-epoch-letterbox/ckpt-120000.
+restored from checkpoint: ../checkpoints/yolov4-coco-adam-mo2017-epoch-letterbox/ckpt-120000
+train | step:  120000 | training until step 140000...
+train | step:  140000 | steps/sec:    2.5 | output: 
+    {'avg_iou_3': 0.67291075,
+     'avg_iou_4': 0.7948863,
+     'avg_iou_5': 0.8479714,
+     'avg_obj_3': 0.26218724,
+     'avg_obj_4': 0.481177,
+     'avg_obj_5': 0.64840144,
+     'box_loss_3': 0.23766302,
+     'box_loss_4': 0.16356651,
+     'box_loss_5': 0.06344541,
+     'class_loss_3': 8.498757,
+     'class_loss_4': 7.1336274,
+     'class_loss_5': 3.5182323,
+     'conf_loss_3': 182.61424,
+     'conf_loss_4': 32.56967,
+     'conf_loss_5': 4.3347106,
+     'learning_rate': 0.0013,
+     'recall50_3': 0.18672244,
+     'recall50_4': 0.4686041,
+     'recall50_5': 0.679556,
+     'total_loss': 239.13382,
+     'training_loss': 239.13382}
+saved checkpoint to ../checkpoints/yolov4-coco-adam-mo2017-epoch-letterbox/ckpt-140000.
+ eval | step:  140000 | running 625 steps of evaluation...
+creating index...
+index created!
+creating index...
+index created!
+Running per image evaluation...
+Evaluate annotation type *bbox*
+DONE (t=98.62s).
+Accumulating evaluation results...
+DONE (t=8.37s).
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.334
+ Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=100 ] = 0.518
+ Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=100 ] = 0.358
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.123
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.306
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.441
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=  1 ] = 0.293
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets= 10 ] = 0.484
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.529
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.278
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.517
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.631
+ eval | step:  140000 | eval time:  267.9 sec | output: 
+    {'AP': 0.3341048,
+     'AP50': 0.5180138,
+     'AP75': 0.35792983,
+     'APl': 0.44142106,
+     'APm': 0.3057542,
+     'APs': 0.12283058,
+     'ARl': 0.6314492,
+     'ARm': 0.5174415,
+     'ARmax1': 0.29288056,
+     'ARmax10': 0.48372695,
+     'ARmax100': 0.5288707,
+     'ARs': 0.27821752,
+     'avg_iou_3': 0.71027136,
+     'avg_iou_4': 0.7756817,
+     'avg_iou_5': 0.81204057,
+     'avg_obj_3': 0.28251544,
+     'avg_obj_4': 0.4143625,
+     'avg_obj_5': 0.52237535,
+     'box_loss_3': 0.11953565,
+     'box_loss_4': 0.12062152,
+     'box_loss_5': 0.0699581,
+     'class_loss_3': 3.8190894,
+     'class_loss_4': 4.874147,
+     'class_loss_5': 3.5385883,
+     'conf_loss_3': 118.66052,
+     'conf_loss_4': 29.315952,
+     'conf_loss_5': 6.465396,
+     'recall50_3': 0.16639613,
+     'recall50_4': 0.35749745,
+     'recall50_5': 0.5552267,
+     'total_loss': 166.98378,
+     'validation_loss': 166.98378}
+train | step:  140000 | training until step 160000...
+train | step:  160000 | steps/sec:    2.5 | output: 
+    {'avg_iou_3': 0.6708406,
+     'avg_iou_4': 0.79729563,
+     'avg_iou_5': 0.8507215,
+     'avg_obj_3': 0.26913658,
+     'avg_obj_4': 0.48967373,
+     'avg_obj_5': 0.6597437,
+     'box_loss_3': 0.23927581,
+     'box_loss_4': 0.16184571,
+     'box_loss_5': 0.06262235,
+     'class_loss_3': 8.290423,
+     'class_loss_4': 6.9596243,
+     'class_loss_5': 3.4375234,
+     'conf_loss_3': 180.17953,
+     'conf_loss_4': 32.143642,
+     'conf_loss_5': 4.234258,
+     'learning_rate': 0.0013,
+     'recall50_3': 0.1939738,
+     'recall50_4': 0.47515655,
+     'recall50_5': 0.6830825,
+     'total_loss': 235.7096,
+     'training_loss': 235.7096}
+saved checkpoint to ../checkpoints/yolov4-coco-adam-mo2017-epoch-letterbox/ckpt-160000.
+ eval | step:  160000 | running 625 steps of evaluation...
+creating index...
+index created!
+creating index...
+index created!
+Running per image evaluation...
+Evaluate annotation type *bbox*
+DONE (t=97.18s).
+Accumulating evaluation results...
+DONE (t=8.30s).
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.340
+ Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=100 ] = 0.526
+ Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=100 ] = 0.365
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.118
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.318
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.448
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=  1 ] = 0.296
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets= 10 ] = 0.488
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.533
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.289
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.520
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.636
+ eval | step:  160000 | eval time:  260.9 sec | output: 
+    {'AP': 0.34033534,
+     'AP50': 0.52595544,
+     'AP75': 0.36484942,
+     'APl': 0.44773346,
+     'APm': 0.31785247,
+     'APs': 0.118118756,
+     'ARl': 0.6361965,
+     'ARm': 0.52021503,
+     'ARmax1': 0.29571456,
+     'ARmax10': 0.48818162,
+     'ARmax100': 0.53252596,
+     'ARs': 0.2888481,
+     'avg_iou_3': 0.7104362,
+     'avg_iou_4': 0.7789237,
+     'avg_iou_5': 0.814667,
+     'avg_obj_3': 0.28737298,
+     'avg_obj_4': 0.4340875,
+     'avg_obj_5': 0.5255631,
+     'box_loss_3': 0.11941788,
+     'box_loss_4': 0.11834912,
+     'box_loss_5': 0.068838134,
+     'class_loss_3': 3.6679602,
+     'class_loss_4': 4.5501223,
+     'class_loss_5': 3.3327956,
+     'conf_loss_3': 117.5099,
+     'conf_loss_4': 28.806662,
+     'conf_loss_5': 6.3182855,
+     'recall50_3': 0.16586877,
+     'recall50_4': 0.37195218,
+     'recall50_5': 0.5548525,
+     'total_loss': 164.4924,
+     'validation_loss': 164.4924}
+train | step:  160000 | training until step 180000...
+train | step:  180000 | steps/sec:    2.5 | output: 
+    {'avg_iou_3': 0.6726133,
+     'avg_iou_4': 0.7986043,
+     'avg_iou_5': 0.8520127,
+     'avg_obj_3': 0.27107543,
+     'avg_obj_4': 0.4924097,
+     'avg_obj_5': 0.6624884,
+     'box_loss_3': 0.23642837,
+     'box_loss_4': 0.15964808,
+     'box_loss_5': 0.061625384,
+     'class_loss_3': 8.10359,
+     'class_loss_4': 6.735437,
+     'class_loss_5': 3.3329859,
+     'conf_loss_3': 177.33897,
+     'conf_loss_4': 31.702465,
+     'conf_loss_5': 4.178692,
+     'learning_rate': 0.0013,
+     'recall50_3': 0.19451107,
+     'recall50_4': 0.4736615,
+     'recall50_5': 0.6835188,
+     'total_loss': 231.85056,
+     'training_loss': 231.85056}
+saved checkpoint to ../checkpoints/yolov4-coco-adam-mo2017-epoch-letterbox/ckpt-180000.
+ eval | step:  180000 | running 625 steps of evaluation...
+creating index...
+index created!
+creating index...
+index created!
+Running per image evaluation...
+Evaluate annotation type *bbox*
+DONE (t=99.86s).
+Accumulating evaluation results...

@@ -46,6 +46,7 @@ class OptimizerConfig(oneof.OneOfConfig):
   adamw: opt_cfg.AdamWeightDecayConfig = opt_cfg.AdamWeightDecayConfig()
   lamb: opt_cfg.LAMBConfig = opt_cfg.LAMBConfig()
   rmsprop: opt_cfg.RMSPropConfig = opt_cfg.RMSPropConfig()
+  sgd_accum: opt_cfg.SGDAccumConfig = opt_cfg.SGDAccumConfig()
 
 
 @dataclasses.dataclass
@@ -69,6 +70,7 @@ class LrConfig(oneof.OneOfConfig):
   exponential: lr_cfg.ExponentialLrConfig = lr_cfg.ExponentialLrConfig()
   polynomial: lr_cfg.PolynomialLrConfig = lr_cfg.PolynomialLrConfig()
   cosine: lr_cfg.CosineLrConfig = lr_cfg.CosineLrConfig()
+  cosine_epoch: lr_cfg.CosineLrEpochConfig = lr_cfg.CosineLrEpochConfig()
   power: lr_cfg.DirectPowerLrConfig = lr_cfg.DirectPowerLrConfig()
   power_linear: lr_cfg.PowerAndLinearDecayLrConfig = (
       lr_cfg.PowerAndLinearDecayLrConfig())

@@ -10,6 +10,9 @@ from official.vision.beta.configs import backbones
 class DarkNet(hyperparams.Config):
   """DarkNet config."""
   model_id: str = 'darknet53'
+  width_scale: int = 1.0
+  depth_scale: int = 1.0
+  dilate: bool = False
 
 
 @dataclasses.dataclass

@@ -116,8 +116,8 @@ class _LayerBuilder(dict):
 
   def register(self, *layer_types: str):
     """
-        Register a parser node (layer) class with the layer builder.
-        """
+    Register a parser node (layer) class with the layer builder.
+    """
 
     def decorator(clz):
       for layer_type in layer_types:
@@ -230,10 +230,10 @@ class shortcutCFG(Config):
   @classmethod
   def from_dict(clz, net, layer_dict):
     """
-        Create a layer instance from the previous layer and a dictionary
-        containing all of the parameters for the DarkNet layer. This is how
-        linking is done by the parser.
-        """
+    Create a layer instance from the previous layer and a dictionary
+    containing all of the parameters for the DarkNet layer. This is how
+    linking is done by the parser.
+    """
     _from = layer_dict['from']
     if not isinstance(_from, tuple):
       _from = (_from,)
@@ -433,6 +433,55 @@ class maxpoolCFG(Config):
         strides=(self.stride, self.stride),
         padding='same')(
             tensors[-1])
+
+
+@layer_builder.register('sam')
+@dataclass
+class samCFG(Config):
+  _type: str = None
+  w: int = field(init=True, default=0)
+  h: int = field(init=True, default=0)
+  c: int = field(init=True, default=0)
+
+  _from: int = field(init=True, default=-2)
+
+  @property
+  def shape(self):
+    return (self.w, self.h, self.c)
+
+  @classmethod
+  def from_dict(clz, net, layer_dict):
+    """
+    Create a layer instance from the previous layer and a dictionary
+    containing all of the parameters for the DarkNet layer. This is how
+    linking is done by the parser.
+    """
+    _from = layer_dict['from']
+    if not isinstance(_from, tuple):
+      _from = (_from,)
+
+    prevlayer = net[-1]
+    l = {
+        '_type': layer_dict['_type'],
+        'w': prevlayer.shape[0],
+        'h': prevlayer.shape[1],
+        'c': prevlayer.shape[2],
+        '_from': _from
+    }
+    return clz(**l)
+
+  # TODO: If someone has patience, they can make this, but it is unimportant
+  def to_tf(self, tensors):
+    raise NotImplementedError
+
+  #   assert self._from == -2
+  #
+  #   input = tensors[-2]
+  #   conv = tensors.pop(-1)
+  #   for i in self._from:
+  #
+  #
+  #   return my_tensors
 
 
 @layer_builder.register('upsample')

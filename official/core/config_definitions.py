@@ -79,7 +79,7 @@ class DataConfig(base_config.Config):
   global_batch_size: int = 0
   is_training: bool = None
   drop_remainder: bool = True
-  shuffle_buffer_size: int = 100
+  shuffle_buffer_size: int = 10000
   cache: bool = False
   cycle_length: Optional[int] = None
   block_length: int = 1

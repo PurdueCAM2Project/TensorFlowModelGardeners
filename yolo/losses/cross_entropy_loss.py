@@ -12,6 +12,7 @@ def ce_loss(y_true, y_pred, label_smoothing):
   y_true = smooth_labels(y_true, y_pred, label_smoothing)\
 
   loss = -tf.math.xlogy(y_true, y_pred + tf.keras.backend.epsilon())
+  loss = tf.where(tf.math.is_nan(loss), 1.0, loss)
   return tf.math.reduce_sum(loss, axis=-1)
 
 

@@ -36,7 +36,6 @@ class AnchorKMeans:
     self._clusters = None
     self._with_color = with_color
 
-  @tf.function
   def iou(self, boxes, clusters):
     n = tf.shape(boxes)[0]
     boxes = tf.repeat(boxes, self._k, axis=0)
@@ -71,7 +70,6 @@ class AnchorKMeans:
   def boxes(self):
     return self._boxes.numpy()
 
-  @tf.function
   def kmeans(self, max_iter, box_num, clusters, k):
     dists = tf.zeros((box_num, k))
     last = tf.zeros((box_num,), dtype=tf.int64)
@@ -119,34 +117,15 @@ class BoxGenInputReader(input_reader.InputReader):
   def read(self,
            k=None,
            image_width=416,
-           input_context=None) -> tf.data.Dataset:
-    """Generates a tf.data.Dataset object."""
+           input_context=None):  # -> tf.data.Dataset:
+
     self._is_training = False
-    if self._tfds_builder:
-      dataset = self._read_tfds(input_context)
-    elif len(self._matched_files) > 1:
-      dataset = self._read_sharded_files(input_context)
-    elif len(self._matched_files) == 1:
-      dataset = self._read_single_file(input_context)
-    else:
-      raise ValueError('It is unexpected that `tfds_builder` is None and '
-                       'there is also no `matched_files`.')
-
-    if self._cache:
-      dataset = dataset.cache()
-
-    if self._is_training:
-      dataset = dataset.shuffle(self._shuffle_buffer_size)
-
-    def maybe_map_fn(dataset, fn):
-      return dataset if fn is None else dataset.map(
-          fn, num_parallel_calls=tf.data.experimental.AUTOTUNE)
-
-    dataset = maybe_map_fn(dataset, self._decoder_fn)
+    dataset = super().read(input_context=input_context)
 
     kmeans_gen = AnchorKMeans(k=k)
     boxes = kmeans_gen(dataset, image_width=image_width)
     del kmeans_gen  # free the memory
+    del dataset
 
     print('clusting complete -> default boxes used ::')
     print(boxes)

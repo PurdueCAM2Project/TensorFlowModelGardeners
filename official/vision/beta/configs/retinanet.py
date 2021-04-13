@@ -52,8 +52,8 @@ class Parser(hyperparams.Config):
   match_threshold: float = 0.5
   unmatched_threshold: float = 0.5
   aug_rand_hflip: bool = False
-  aug_scale_min: float = 1.0
-  aug_scale_max: float = 1.0
+  aug_scale_min: float = 0.5
+  aug_scale_max: float = 2.0
   skip_crowd_during_training: bool = True
   max_num_instances: int = 100
 
@@ -62,7 +62,7 @@ class Parser(hyperparams.Config):
 class DataConfig(cfg.DataConfig):
   """Input config for training."""
   input_path: str = ''
-  global_batch_size: int = 0
+  global_batch_size: int = 32
   is_training: bool = False
   dtype: str = 'bfloat16'
   decoder: DataDecoder = DataDecoder()
@@ -106,8 +106,8 @@ class DetectionGenerator(hyperparams.Config):
 
 @dataclasses.dataclass
 class RetinaNet(hyperparams.Config):
-  num_classes: int = 0
-  input_size: List[int] = dataclasses.field(default_factory=list)
+  num_classes: int = 80
+  input_size: List[int] = dataclasses.field(default_factory=lambda:[416, 416, 3])
   min_level: int = 3
   max_level: int = 7
   anchor: Anchor = Anchor()
