@@ -74,7 +74,7 @@ def fill_truth_region(boxes, ow, oh, dx, dy, sx, sy, flip):
       left, right = 1. - right, 1. - left
 
     left = constrain(0, 1, left)
-    right = constrain(0, 1 right)
+    right = constrain(0, 1, right)
     top = constrain(0, 1, top)
     bot = constrain(0, 1, bot)
 
