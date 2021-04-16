@@ -447,7 +447,23 @@ class Parser(parser.Parser):
       classes = tf.gather(classes, inds)
       boxes = box_ops.normalize_boxes(boxes, im_shape)
 
-    image, boxes = load_data_region(image, boxes, self._image_w, self._image_h, self.jitter_im, self._aug_rand_hue, self._aug_rand_saturation, self.aug_rand_brightness)
+    image, boxes = preprocessing_ops.load_data_region(image, boxes, self._image_w, self._image_h, self._jitter_im, self._aug_rand_hue, self._aug_rand_saturation, self._aug_rand_brightness)
+
+    if self._random_flip:
+      image, boxes, _ = preprocess_ops.random_horizontal_flip(
+          image, boxes, seed=self._seed)
+
+    if self._aug_rand_hue > 0.0:
+      delta = preprocessing_ops.rand_uniform_strong(-self._aug_rand_hue,
+                                                    self._aug_rand_hue)
+      image = tf.image.adjust_hue(image, delta)
+    if self._aug_rand_saturation > 0.0:
+      delta = preprocessing_ops.rand_scale(self._aug_rand_saturation)
+      image = tf.image.adjust_saturation(image, delta)
+    if self._aug_rand_brightness > 0.0:
+      delta = preprocessing_ops.rand_scale(self._aug_rand_brightness)
+      image *= delta
+    image = tf.clip_by_value(image, 0.0, 1.0)
     
     num_dets = tf.shape(classes)[0]
 

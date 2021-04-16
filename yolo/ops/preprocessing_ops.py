@@ -1,3 +1,5 @@
+import random
+
 import tensorflow as tf
 import tensorflow_addons as tfa
 import tensorflow.keras.backend as K
@@ -7,43 +9,49 @@ from official.vision.beta.ops import box_ops as bbox_ops
 
 
 def load_data_region(im, boxes, w, h, jitter, hue, saturation, exposure):
-  oh, ow = tf.shape(im)[:2]
+  oh = tf.shape(im)[0]
+  ow = tf.shape(im)[1]
 
   dw = tf.cast(tf.cast(ow, dtype=tf.float32) * jitter, dtype=tf.int32)
   dh = tf.cast(tf.cast(oh, dtype=tf.float32) * jitter, dtype=tf.int32)
 
-  pleft, pright = tf.random.uniform(shape=[2], minval = -dw, maxval=dw, dtype=tf.int32)
-  ptop, pbot = tf.random.uniform(shape=[2], minval = -dh, maxval=dh, dtype=tf.int32)
+  pleft = tf.random.uniform(shape=[], minval = -dw, maxval=dw, dtype=tf.int32)
+  pright = tf.random.uniform(shape=[], minval = -dw, maxval=dw, dtype=tf.int32)
+  ptop = tf.random.uniform(shape=[], minval = -dh, maxval=dh, dtype=tf.int32)
+  pbot = tf.random.uniform(shape=[], minval = -dh, maxval=dh, dtype=tf.int32)
 
   # Crop offsets
-  left_offset = max(0, pleft)
-  right_offset = max(0, pright)
-  top_offset = max(0, ptop)
-  bot_offset = max(0, pbot)
+  left_offset = tf.math.maximum(tf.constant(0), pleft)
+  right_offset = tf.math.maximum(tf.constant(0), pright)
+  top_offset = tf.math.maximum(tf.constant(0), ptop)
+  bot_offset = tf.math.maximum(tf.constant(0), pbot)
 
   # Cropped image dimensions
   cwidth = ow - left_offset - right_offset
   cheight = oh - top_offset - bot_offset
 
   # Crop the image
-  cropped = tf.image.crop_to_bounding_box(image, top_offset, left_offset, cheight, cwidth)
+  cropped = tf.image.crop_to_bounding_box(im, top_offset, left_offset, cheight, cwidth)
 
   # Padding values
-  left_pad = abs(min(pleft, 0))
-  right_pad = abs(min(pright, 0))
-  top_pad = abs(min(ptop, 0))
-  bot_pad = abs(min(pbot, 0))
+  left_pad = tf.math.abs(tf.math.minimum(tf.constant(0), pleft))
+  right_pad = tf.math.abs(tf.math.minimum(tf.constant(0), pright))
+  top_pad = tf.math.abs(tf.math.minimum(tf.constant(0), ptop))
+  bot_pad = tf.math.abs(tf.math.minimum(tf.constant(0), pbot))
 
   # Pad the image
   padded = tf.pad(cropped, [[top_pad, bot_pad], [left_pad, right_pad], [0, 0]])
 
   sized = tf.image.resize(padded, [w,h], method='nearest')
 
-  flip = tf.random.uniform([], minval=0, maxval=2, dtype=tf.int32)
+  
+  flip = random.randint(0, 1)
+  """
   if flip:
     sized = tf.image.flip_left_right(sized)
 
   distorted = random_distort_image(sized, hue, saturation, exposure)
+  """
 
   # Augment bounding boxes
   sx = float(cwidth + left_pad + right_pad) / float(ow)
@@ -54,30 +62,31 @@ def load_data_region(im, boxes, w, h, jitter, hue, saturation, exposure):
 
   new_boxes = fill_truth_region(boxes, ow, oh, dx, dy, 1./sx, 1./sy, flip)
 
-  return distorted, new_boxes
+  return sized, new_boxes
 
 
 def fill_truth_region(boxes, ow, oh, dx, dy, sx, sy, flip):
-  new_boxes = []
-  for ymin, xmin, ymax, xmax in boxes:
-    left = float(xmin)
-    right = float(xmax)
-    top = float(ymin)
-    bot = float(ymax)
+  def correct_box(box):
+    # top, left, bot, right
+    scale = tf.stack([sy, sx, sy, sx], 0)
+    offset = tf.stack([dy, dx, dy, dx], 0)
 
-    left = left * sx - dx
-    right = right * sx - dx
-    top = top * sy - dy
-    bot = bot * sy - dy
+    box *= scale
+    box += offset
 
+    """
     if flip:
-      left, right = 1. - right, 1. - left
+      left = 1. - box[1]
+      right = 1. - box[0]
+      top = box[2]
+      bot = box[3]
+      box = tf.stack([left, right, top, bot], 0)
+    """
 
-    left = constrain(0, 1, left)
-    right = constrain(0, 1, right)
-    top = constrain(0, 1, top)
-    bot = constrain(0, 1, bot)
+    # box format: (ymin, xmin, ymax, xmax)
+    box = tf.clip_by_value(box, 0.0, 1.0)
 
+    """
     new_x = left
     new_y = top
     new_width = right - left
@@ -87,10 +96,13 @@ def fill_truth_region(boxes, ow, oh, dx, dy, sx, sy, flip):
     new_height = constrain(0, 1, new_height)
 
     if new_width < 0.001 or new_height < 0.001:
-      continue
+      return tf.constant([])
 
-    new_boxes.append([float(new_x), float(new_y), float(new_width), float(new_height)])
-  return tf.constant(new_boxes, dtype=tf.float32)
+    return tf.constant([float(new_x), float(new_y), float(new_width), float(new_height)], dtype=tf.float32)
+    """
+    return box
+
+  return tf.map_fn(correct_box, boxes)
 
 
 def constrain(lb, ub, val):
@@ -104,7 +116,8 @@ def constrain(lb, ub, val):
 def distort_image(im, hue, sat, val):
   orig_type = im.dtype
   im = tf.cast(im, dtype=tf.float32)
-  h, w= tf.shape(im)[:2]
+  h = tf.shape(im)[0]
+  w = tf.shape(im)[1]
 
   im = tf.image.rgb_to_hsv(im)
   
