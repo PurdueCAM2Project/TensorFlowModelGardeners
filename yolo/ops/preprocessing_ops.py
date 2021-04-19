@@ -67,17 +67,18 @@ def fill_truth_region(boxes, ow, oh, dx, dy, sx, sy, flip):
     offset = tf.stack([dy, dx, dy, dx], 0)
 
     box *= scale
-    box += offset
+    box -= offset
 
+    # box format: (top, left, bot, right)
     # box format: (ymin, xmin, ymax, xmax)
     box = tf.clip_by_value(box, 0.0, 1.0)
 
     if flip:
-      left = 1. - box[1]
-      right = 1. - box[0]
-      top = box[2]
-      bot = box[3]
-      box = tf.stack([bot, left, top, right], 0)
+      left = 1. - box[3]
+      right = 1. - box[1]
+      top = box[0]
+      bot = box[2]
+      box = tf.stack([top, left, bot, right], 0)
     return box
 
   return tf.map_fn(correct_box, boxes)
