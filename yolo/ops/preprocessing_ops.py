@@ -1,5 +1,3 @@
-import random
-
 import tensorflow as tf
 import tensorflow_addons as tfa
 import tensorflow.keras.backend as K
@@ -7,7 +5,7 @@ from yolo.ops import box_ops
 from official.vision.beta.ops import preprocess_ops
 from official.vision.beta.ops import box_ops as bbox_ops
 
-
+@tf.function
 def load_data_region(im, boxes, w, h, jitter, hue, saturation, exposure):
   oh = tf.shape(im)[0]
   ow = tf.shape(im)[1]
@@ -32,7 +30,7 @@ def load_data_region(im, boxes, w, h, jitter, hue, saturation, exposure):
 
   # Crop the image
   cropped = tf.image.crop_to_bounding_box(im, top_offset, left_offset, cheight, cwidth)
-
+  
   # Padding values
   left_pad = tf.math.abs(tf.math.minimum(tf.constant(0), pleft))
   right_pad = tf.math.abs(tf.math.minimum(tf.constant(0), pright))
@@ -41,17 +39,15 @@ def load_data_region(im, boxes, w, h, jitter, hue, saturation, exposure):
 
   # Pad the image
   padded = tf.pad(cropped, [[top_pad, bot_pad], [left_pad, right_pad], [0, 0]])
-
-  sized = tf.image.resize(padded, [w,h], method='nearest')
-
   
-  flip = random.randint(0, 1)
-  """
+  sized = tf.image.resize(padded, [w,h], method='nearest')
+  
+  flip = tf.cast(tf.random.uniform(shape=[], minval=0, maxval=2, dtype=tf.int32), tf.bool)
   if flip:
     sized = tf.image.flip_left_right(sized)
+    
 
-  distorted = random_distort_image(sized, hue, saturation, exposure)
-  """
+  sized = random_distort_image(sized, hue, saturation, exposure)
 
   # Augment bounding boxes
   sx = float(cwidth + left_pad + right_pad) / float(ow)
@@ -74,32 +70,9 @@ def fill_truth_region(boxes, ow, oh, dx, dy, sx, sy, flip):
     box *= scale
     box += offset
 
-    """
-    if flip:
-      left = 1. - box[1]
-      right = 1. - box[0]
-      top = box[2]
-      bot = box[3]
-      box = tf.stack([left, right, top, bot], 0)
-    """
-
     # box format: (ymin, xmin, ymax, xmax)
     box = tf.clip_by_value(box, 0.0, 1.0)
 
-    """
-    new_x = left
-    new_y = top
-    new_width = right - left
-    new_height = bot - top
-
-    new_width = constrain(0, 1, new_width)
-    new_height = constrain(0, 1, new_height)
-
-    if new_width < 0.001 or new_height < 0.001:
-      return tf.constant([])
-
-    return tf.constant([float(new_x), float(new_y), float(new_width), float(new_height)], dtype=tf.float32)
-    """
     return box
 
   return tf.map_fn(correct_box, boxes)
@@ -114,22 +87,10 @@ def constrain(lb, ub, val):
 
 
 def distort_image(im, hue, sat, val):
-  orig_type = im.dtype
-  im = tf.cast(im, dtype=tf.float32)
-  h = tf.shape(im)[0]
-  w = tf.shape(im)[1]
-
-  im = tf.image.rgb_to_hsv(im)
-  
-  x = tf.squeeze(tf.slice(im, [0, 0, 0], [h, w, 1]))
-  y = tf.squeeze(tf.slice(im, [0, 0, 1], [h, w, 1])) * sat
-  z = tf.squeeze(tf.slice(im, [0, 0, 2], [h, w, 1])) * val
-  im = tf.stack([x, y, z], axis=2)
-
-  im = tf.image.hsv_to_rgb(im)
+  im = tf.image.adjust_saturation(im, sat)
   im = tf.image.adjust_hue(im, hue)
-
-  return tf.cast(im, dtype=orig_type)
+  #im = tf.image.adjust_brightness(im, val)
+  return im
 
 
 def random_distort_image(im, hue, saturation, exposure):

@@ -139,7 +139,7 @@ def test_yolo_pipeline(is_training=True):
       ind_xy = tf.cast(j['inds']['5'][shind][..., 0:2], true_xy.dtype)
       x, y = tf.split(ind_xy, 2, axis=-1)
       ind_xy = tf.concat([y, x], axis=-1)
-      tf.print(true_xy - ind_xy, summarize=-1)
+      #tf.print(true_xy - ind_xy, summarize=-1)
       axe[0].imshow(i_[shind])
       axe[1].imshow(image)
       axe[2].imshow(obj3[shind].numpy())
@@ -148,7 +148,7 @@ def test_yolo_pipeline(is_training=True):
 
       fig.set_size_inches(16.5, 5.5, forward=True)
       plt.tight_layout()
-      plt.show()
+      plt.savefig("test_{}.png".format(l))
 
     ltime = time.time()
 
