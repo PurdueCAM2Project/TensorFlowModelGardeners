@@ -5,7 +5,7 @@ from yolo.ops import box_ops
 from official.vision.beta.ops import preprocess_ops
 from official.vision.beta.ops import box_ops as bbox_ops
 
-@tf.function
+
 def load_data_region(im, boxes, w, h, jitter, hue, saturation, exposure):
   oh = tf.shape(im)[0]
   ow = tf.shape(im)[1]
@@ -45,7 +45,6 @@ def load_data_region(im, boxes, w, h, jitter, hue, saturation, exposure):
   flip = tf.cast(tf.random.uniform(shape=[], minval=0, maxval=2, dtype=tf.int32), tf.bool)
   if flip:
     sized = tf.image.flip_left_right(sized)
-    
 
   sized = random_distort_image(sized, hue, saturation, exposure)
 
@@ -73,6 +72,12 @@ def fill_truth_region(boxes, ow, oh, dx, dy, sx, sy, flip):
     # box format: (ymin, xmin, ymax, xmax)
     box = tf.clip_by_value(box, 0.0, 1.0)
 
+    if flip:
+      left = 1. - box[1]
+      right = 1. - box[0]
+      top = box[2]
+      bot = box[3]
+      box = tf.stack([bot, left, top, right], 0)
     return box
 
   return tf.map_fn(correct_box, boxes)
