@@ -96,7 +96,7 @@ import time
 
 def test_yolo_pipeline(is_training=True):
   dataset, dsp = test_yolo_input_task()
-  print(dataset, dsp)
+  #print(dataset, dsp)
   # shind = 3
   dip = 0
   drawer = utils.DrawBoxes(labels=coco.get_coco_names(), thickness=2)
@@ -104,7 +104,6 @@ def test_yolo_pipeline(is_training=True):
   ltime = time.time()
 
   data = dataset if is_training else dsp
-  data = data.take(15)
   for l, (i, j) in enumerate(data):
     ftime = time.time()
     i_ = tf.image.draw_bounding_boxes(i, j['bbox'], [[1.0, 0.0, 1.0]])
@@ -116,43 +115,37 @@ def test_yolo_pipeline(is_training=True):
     obj4 = gt['4'][..., 0]
     obj5 = gt['5'][..., 0]
 
-    for shind in range(1):
-      fig, axe = plt.subplots(1, 5)
+    fig, axe = plt.subplots(1, 1)
 
-      image = i[shind]
-      boxes = j["bbox"][shind]
-      classes = j["classes"][shind]
-      confidence = j["classes"][shind]
+    image = i[0]
+    boxes = j["bbox"][0]
+    classes = j["classes"][0]
+    confidence = j["classes"][0]
 
-      draw_dict = {
-          'bbox': boxes,
-          'classes': classes,
-          'confidence': confidence,
-      }
-      # print(tf.cast(bops.denormalize_boxes(boxes, image.shape[:2]), tf.int32))
-      image = drawer(image, draw_dict)
+    draw_dict = {
+        'bbox': boxes,
+        'classes': classes,
+        'confidence': confidence,
+    }
+    # print(tf.cast(bops.denormalize_boxes(boxes, image.shape[:2]), tf.int32))
+    image = drawer(image, draw_dict)
 
-      (true_box, ind_mask, true_class, best_iou_match, num_reps) = tf.split(
-          j['upds']['5'], [4, 1, 1, 1, 1], axis=-1)
+    (true_box, ind_mask, true_class, best_iou_match, num_reps) = tf.split(
+        j['upds']['5'], [4, 1, 1, 1, 1], axis=-1)
 
-      true_xy = true_box[shind][..., 0:2] * 20
-      ind_xy = tf.cast(j['inds']['5'][shind][..., 0:2], true_xy.dtype)
-      x, y = tf.split(ind_xy, 2, axis=-1)
-      ind_xy = tf.concat([y, x], axis=-1)
-      #tf.print(true_xy - ind_xy, summarize=-1)
-      axe[0].imshow(i_[shind])
-      axe[1].imshow(image)
-      axe[2].imshow(obj3[shind].numpy())
-      axe[3].imshow(obj4[shind].numpy())
-      axe[4].imshow(obj5[shind].numpy())
-
-      fig.set_size_inches(16.5, 5.5, forward=True)
-      plt.tight_layout()
-      plt.savefig("test_{}.png".format(l))
+    # true_xy = true_box[shind][..., 0:2] * 20
+    # ind_xy = tf.cast(j['inds']['5'][shind][..., 0:2], true_xy.dtype)
+    # x, y = tf.split(ind_xy, 2, axis=-1)
+    # ind_xy = tf.concat([y, x], axis=-1)
+    # tf.print(true_xy - ind_xy, summarize=-1)
+    axe.imshow(image)
+    plt.axis('off')
+    plt.savefig("test_{}.jpg".format(l), bbox_inches='tight')
+    plt.close(fig)
 
     ltime = time.time()
 
-    if l >= 100:
+    if l >= 64:
       break
 
 

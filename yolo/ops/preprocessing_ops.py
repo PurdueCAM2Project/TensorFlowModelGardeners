@@ -95,7 +95,7 @@ def constrain(lb, ub, val):
 def distort_image(im, hue, sat, val):
   im = tf.image.adjust_saturation(im, sat)
   im = tf.image.adjust_hue(im, hue)
-  #im = tf.image.adjust_brightness(im, val)
+  im *= val
   return im
 
 
