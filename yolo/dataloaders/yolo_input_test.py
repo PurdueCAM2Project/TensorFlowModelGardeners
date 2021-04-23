@@ -43,10 +43,10 @@ def test_yolo_input_task():
     # loading both causes issues, but oen at a time is not issue, why?
     config.train_data.dtype = 'float32'
     config.validation_data.dtype = 'float32'
-    config.train_data.tfds_name = 'coco'
-    config.validation_data.tfds_name = 'coco'
-    config.train_data.tfds_split = 'train'
-    config.validation_data.tfds_split = 'validation'
+    config.train_data.tfds_name = 'small_coco'
+    config.validation_data.tfds_name = 'small_coco'
+    config.train_data.tfds_split = 'validation[:1]'
+    config.validation_data.tfds_split = 'validation[:1]'
     train_data = task.build_inputs(config.train_data)
     test_data = task.build_inputs(config.validation_data)
   return train_data, test_data
