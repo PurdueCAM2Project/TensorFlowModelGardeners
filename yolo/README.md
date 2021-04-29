@@ -234,7 +234,7 @@ python3 -m yolo.train --mode=eval --experiment=yolo_custom --model_dir=training_
 ## Demo
 
 ### YOLOv4 Object Detection
-[![YOLOv4 Demo Video GIF](readme_images/yolov4_demo/demo_vid.jpg)](https://www.youtube.com/watch?v=jSlBCkQaUXE)
+[![YOLOv4 Demo Video GIF](readme_images/yolov4_demo/demo_vid.gif)](https://www.youtube.com/watch?v=jSlBCkQaUXE)
 
 ## Change Log
 
