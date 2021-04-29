@@ -39,6 +39,7 @@ Yolo v3 and v4 serve as the most up to date and capable versions of the Yolo net
 * [Example Usage](#example-usage)
 * [Training](#training)
 * [Evaluation](#evaluation)
+* [Demo](#demo)
 * [References](#references)
 * [License](#license)
 * [Citation](#citation)
@@ -229,6 +230,11 @@ python3 -m yolo.train --mode=eval --experiment=darknet_classification --model_di
 python3 -m yolo.train --mode=eval --experiment=yolo_custom --model_dir=training_dir 
 --config_file=yolo/configs/experiments/yolov4.yaml
 ```
+
+## Demo
+
+### YOLOv4 Object Detection
+[![YOLOv4 Demo Video GIF](readme_images/yolov4_demo/demo_vid.jpg)](https://www.youtube.com/watch?v=jSlBCkQaUXE)
 
 ## Change Log
 
