@@ -154,17 +154,29 @@ model.summary()
 ### Preprocessing
 
 Prior to training the data, the images and their corresponding bounding boxes go through a series of preprocessing steps:
-* **Random Flip** - Images and corresponding bounding boxes are reflected horizontally 
+
+![Original Image](readme_images/original/original.jpg)
+* **Original** - Original Image
+
+![Random Flip Example](readme_images/random_flip/example_1.jpg)
+* **Random Flip** - Images and corresponding bounding boxes are reflected horizontally
+
+![Random Crop+Pad+Resize Example](readme_images/random_crop_pad_resize/example_3.jpg)
 * **Random Crop** - Create subset of image
 * **Padding** -  Images padded to be target size
 * **Random Scale** - Images scaled to new dimensions
+
+![Letterbox Example](readme_images/letterbox/example_1.jpg)
+* **Letterbox** - Images rescaled with added borders to achieve certain dimension while preserving aspect ratio
+
+![Random Jitter Example](readme_images/random_jitter/example_1.jpg)
+* **Random Jitter** - Applied to images and boxes - random shift and scale
+
 * **Random Zoom** - Augment training with zoomed images
 * **Gaussian Noise** - Additive noise applied to images
-* **Letterbox** - Images rescaled with added borders to achieve certain dimension while preserving aspect ratio
 * **Mosaic** - Set of 4 images combined into one with different ratios 
 * **CutMix** - Random patches cut and pasted from input images (used in classification not detection)
 * **Random Translation** - Images randomly translated during training
-* **Random Jitter** - Applied to images and boxes - random shift and scale
 * **Aspect Ratio** - Preserved within the image
 * **Data Augmentation** - the following data augmentation steps are applied according to hyperparameters: 
    - Random _Saturation_, Random _Brightness_, Random _Zoom_, Random _Rotate_, Random _Hue_, and Random _Aspect_
